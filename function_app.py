@@ -1,26 +1,12 @@
-# import logging
-# import azure.functions as func
-
-# app = func.FunctionApp()
-
-# @app.timer_trigger(schedule="0 5 * * * *", arg_name="myTimer", run_on_startup=False,
-#               use_monitor=False) 
-# def get_dialpad_calls(myTimer: func.TimerRequest) -> None:
-#     if myTimer.past_due:
-#         logging.info('The timer is past due!')
-
-#     logging.info('Python timer trigger function executed.')
-
-# https://lendzdialpadscripts.blob.core.windows.net/calls/?sv=2022-11-02&ss=b&srt=co&se=2025-05-17T21%3A55%3A18Z&sp=rwl&sig=bWZlUqB2uXUKEmixW41x6PU%2FHTWagyqet4vn47cFVnk%3D
-
-
 import datetime
 import logging
 import os
 import requests
 import time
 import pytz
+import pyodbc
 import json
+import datetime
 from azure.storage.blob import BlobServiceClient
 import azure.functions as func
 
@@ -30,6 +16,7 @@ api_endpoint = 'https://dialpad.com/api/v2/call'
 api_token = 'JzEWbTUAQ7Msvd2Qha58hk2dmthVdFVmrgmTGVXg2RbyTBU4BAzsBDk6x8EKc6YxC7XrLxMbvjNY37pWhtDC8mLRkuUFyaU7YjGD'
 MAX_REQUESTS_PER_MINUTE = 1000  # Setting a slightly lower limit for safety
 MIN_DELAY_SECONDS = 60.0 / MAX_REQUESTS_PER_MINUTE
+connection_string = 'Driver={ODBC Driver 17 for SQL Server};Server=tcp:lendz.database.windows.net,1433;Database=Lexi_DEV;Uid=lexi;Pwd=H3n4y*_D@;Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;'
 
 app = func.FunctionApp()
 
@@ -46,6 +33,141 @@ def get_dialpad_calls(myTimer: func.TimerRequest) -> None:
 
     logging.info('Python timer trigger function ran at %s', utc_timestamp)
     dialpad_api_request()
+
+def convert_milliseconds_to_datetime(milliseconds):
+    """
+    Converts milliseconds since the Unix epoch to a datetime object in UTC.
+
+    Args:
+        milliseconds (float): Milliseconds since the Unix epoch.
+
+    Returns:
+        datetime.datetime: A datetime object representing the time in UTC.
+    """
+    # Convert milliseconds to seconds.
+    seconds = milliseconds / 1000.0
+    # Create a datetime object from the timestamp (in UTC).
+    utc_time = datetime.datetime.utcfromtimestamp(seconds)
+    return utc_time
+
+def write_dialpad_data_to_azure_sql(json_data, connection_string):
+    """
+    Writes Dialpad call data from a JSON structure to an Azure SQL database using a single bulk insert.
+
+    Args:
+        json_data (str): A JSON string containing the call data.  The expected structure
+            is a dictionary with an "items" key containing a list of call records.
+        connection_string (str): The connection string for the Azure SQL database.
+    """
+    try:
+        data = json.loads(json_data)
+    except json.JSONDecodeError as e:
+        print(f"Error: Invalid JSON format.  Details: {e}")
+        return
+
+    if not isinstance(data, dict) or "items" not in data:
+        print("Error: Invalid JSON structure.  The JSON data should be a dictionary"
+              " containing an 'items' key with a list of call records.")
+        return
+
+    items = data["items"]
+    if not isinstance(items, list):
+        print("Error: The 'items' key should contain a list of call records.")
+        return
+
+    try:
+        conn = pyodbc.connect(connection_string)
+        cursor = conn.cursor()
+    except pyodbc.Error as e:
+        print(f"Error: Could not connect to the database.  Details: {e}")
+        return
+
+    # Define the table name
+    table_name = "DialpadCalls"
+
+    # Construct the INSERT statement.  It's good practice to explicitly name the columns.
+    insert_statement = f"""
+    INSERT INTO {table_name} (
+        call_id, contact_email, contact_id, contact_name, contact_phone, contact_type,
+        date_connected, date_ended, date_started, direction, duration,
+        entry_point_target_id, event_timestamp, external_number, internal_number,
+        is_transferred, mos_score, proxy_target_id, state, target_email,
+        target_id, target_name, target_phone, target_type, total_duration, was_recorded
+    ) VALUES (
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+    )
+    """
+
+    # Prepare the data for bulk insert.  This is a list of tuples, where each tuple
+    # represents a row to be inserted.
+    rows = []
+    for item in items:
+        try:
+            # Handle the nested 'contact' and 'target' objects.  Extract the values.
+            contact_data = item.get("contact", {})
+            target_data = item.get("target", {})
+            entry_point_target_data = item.get("entry_point_target", {})
+
+            # Convert timestamps to datetime objects using the helper function.  Use None if the timestamp is missing.
+            date_ended = convert_milliseconds_to_datetime(float(item.get("date_ended"))) if item.get("date_ended") else None
+            date_started = convert_milliseconds_to_datetime(float(item.get("date_started"))) if item.get("date_started") else None
+            event_timestamp = convert_milliseconds_to_datetime(float(item.get("event_timestamp"))) if item.get("event_timestamp") else None
+            date_connected = None  # The example JSON doesn't have date_connected.
+            if "date_rang" in item:
+                date_connected = convert_milliseconds_to_datetime(float(item["date_rang"]))
+
+            # Prepare the values for the INSERT statement.  The order must match the
+            # order of the columns in the INSERT statement.
+            values = (
+                item.get("call_id"),
+                contact_data.get("email"),
+                contact_data.get("id"),
+                contact_data.get("name"),
+                contact_data.get("phone"),
+                contact_data.get("type"),
+                date_connected,
+                date_ended,
+                date_started,
+                item.get("direction"),
+                item.get("duration"),
+                entry_point_target_data.get("id"),
+                event_timestamp,
+                item.get("external_number"),
+                item.get("internal_number"),
+                item.get("is_transferred"),
+                item.get("mos_score"),
+                None,  # proxy_target_id -  The example JSON doesn't have proxy_target.
+                item.get("state"),
+                target_data.get("email"),
+                target_data.get("id"),
+                target_data.get("name"),
+                target_data.get("phone"),
+                target_data.get("type"),
+                item.get("total_duration"),
+                item.get("was_recorded"),
+            )
+            rows.append(values)
+        except Exception as e:
+            print(f"Error processing record for call_id: {item.get('call_id')}. Details: {e}")
+            print(f"Problematic data: {item}")
+            #  Don't rollback here,  process the rest and log the errors
+
+    # Perform the bulk insert if there are rows to insert.
+    if rows:
+        try:
+            cursor.executemany(insert_statement, rows)
+            conn.commit()
+            print(f"Successfully inserted {len(rows)} records into {table_name}")
+        except pyodbc.Error as e:
+            print(f"Error performing bulk insert. Details: {e}")
+            conn.rollback()  # Rollback the entire transaction on error
+    else:
+        print("No data to insert.")
+
+    # Close the database connection.  Important to free up resources.
+    cursor.close()
+    conn.close()
+    print("Successfully closed the database connection.")
 
 
 def dialpad_api_request():
@@ -65,14 +187,14 @@ def dialpad_api_request():
         logging.error(f'Error creating BlobServiceClient: {e}')
         return  # Exit if BlobServiceClient cannot be created
 
-    # Define the target date and time in Eastern Time
-    eastern_tz = pytz.timezone('America/New_York')
-    may_first_et = eastern_tz.localize(datetime.datetime(2025, 5, 1, 0, 0, 0))
-
-    # Convert the Eastern Time to UTC timestamp (seconds)
-    #started_after_timestamp = int(may_first_et.astimezone(pytz.utc).timestamp())
-    started_after_timestamp = 1746057600000
-
+    # Get current time in seconds since epoch
+    current_time = time.time()
+    # Subtract 2 hours (2 * 3600 seconds)
+    two_hours_ago = current_time - (2 * 3600)
+    # Convert to milliseconds
+    two_hours_ago_millis = int(two_hours_ago * 1000)
+    started_after_timestamp = two_hours_ago_millis
+    
     while True:
         current_time = time.time()
         elapsed_time = current_time - start_time
@@ -113,7 +235,8 @@ def dialpad_api_request():
                 # Upload the current JSON response to Azure Blob Storage
                 blob_client.upload_blob(json.dumps(response_json), overwrite=True)
                 logging.info(f'Response for page {request_count} uploaded to blob storage as {blob_name}')
-
+                # Write the JSON data to Azure SQL database
+                write_dialpad_data_to_azure_sql(json.dumps(response_json), connection_string)
                 # Check if there's a next cursor
                 if 'cursor' in response_json and response_json['cursor']:
                     next_cursor = response_json['cursor']
@@ -133,6 +256,8 @@ def dialpad_api_request():
             time.sleep(MIN_DELAY_SECONDS) # Add a small delay between requests
 
     logging.info('Pagination process completed.')
+
+
 
 if __name__ == "__main__":
     dialpad_api_request()
