@@ -52,7 +52,7 @@ def convert_milliseconds_to_datetime(milliseconds):
 
 def write_dialpad_data_to_azure_sql(json_data, connection_string):
     """
-    Writes Dialpad call data from a JSON structure to an Azure SQL database using a single bulk insert.
+    Writes Dialpad call data from a JSON structure to an Azure SQL database using a bulk insert.
 
     Args:
         json_data (str): A JSON string containing the call data.  The expected structure
@@ -87,20 +87,57 @@ def write_dialpad_data_to_azure_sql(json_data, connection_string):
 
     # Construct the INSERT statement.  It's good practice to explicitly name the columns.
     insert_statement = f"""
-    INSERT INTO {table_name} (
-        call_id, contact_email, contact_id, contact_name, contact_phone, contact_type,
-        date_connected, date_ended, date_started, direction, duration,
-        entry_point_target_id, event_timestamp, external_number, internal_number,
-        is_transferred, mos_score, proxy_target_id, state, target_email,
-        target_id, target_name, target_phone, target_type, total_duration, was_recorded
-    ) VALUES (
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-    )
+    MERGE {table_name} AS target
+    USING (SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) AS source
+           (call_id, contact_email, contact_id, contact_name, contact_phone, contact_type,
+            date_connected, date_ended, date_started, direction, duration,
+            entry_point_target_id, event_timestamp, external_number, internal_number,
+            is_transferred, mos_score, proxy_target_id, state, target_email,
+            target_id, target_name, target_phone, target_type, total_duration, was_recorded)
+    ON (target.call_id = source.call_id)
+    WHEN MATCHED THEN
+        UPDATE SET
+            target.contact_email = source.contact_email,
+            target.contact_id = source.contact_id,
+            target.contact_name = source.contact_name,
+            target.contact_phone = source.contact_phone,
+            target.contact_type = source.contact_type,
+            target.date_connected = source.date_connected,
+            target.date_ended = source.date_ended,
+            target.date_started = source.date_started,
+            target.direction = source.direction,
+            target.duration = source.duration,
+            target.entry_point_target_id = source.entry_point_target_id,
+            target.event_timestamp = source.event_timestamp,
+            target.external_number = source.external_number,
+            target.internal_number = source.internal_number,
+            target.is_transferred = source.is_transferred,
+            target.mos_score = source.mos_score,
+            target.proxy_target_id = source.proxy_target_id,
+            target.state = source.state,
+            target.target_email = source.target_email,
+            target.target_id = source.target_id,
+            target.target_name = source.target_name,
+            target.target_phone = source.target_phone,
+            target.target_type = source.target_type,
+            target.total_duration = source.total_duration,
+            target.was_recorded = source.was_recorded
+    WHEN NOT MATCHED THEN
+        INSERT (call_id, contact_email, contact_id, contact_name, contact_phone, contact_type,
+                date_connected, date_ended, date_started, direction, duration,
+                entry_point_target_id, event_timestamp, external_number, internal_number,
+                is_transferred, mos_score, proxy_target_id, state, target_email,
+                target_id, target_name, target_phone, target_type, total_duration, was_recorded)
+        VALUES (source.call_id, source.contact_email, source.contact_id, source.contact_name, source.contact_phone, source.contact_type,
+                source.date_connected, source.date_ended, source.date_started, source.direction, source.duration,
+                source.entry_point_target_id, source.event_timestamp, source.external_number, source.internal_number,
+                source.is_transferred, source.mos_score, source.proxy_target_id, source.state, source.target_email,
+                source.target_id, source.target_name, source.target_phone, source.target_type, source.total_duration, source.was_recorded);
     """
 
-    # Prepare the data for bulk insert.  This is a list of tuples, where each tuple
-    # represents a row to be inserted.
-    rows = []
+    # Prepare the data for bulk insert.  This involves converting each item
+    # into a tuple of values that matches the order of columns in the INSERT statement.
+    values_list = []
     for item in items:
         try:
             # Handle the nested 'contact' and 'target' objects.  Extract the values.
@@ -112,12 +149,10 @@ def write_dialpad_data_to_azure_sql(json_data, connection_string):
             date_ended = convert_milliseconds_to_datetime(float(item.get("date_ended"))) if item.get("date_ended") else None
             date_started = convert_milliseconds_to_datetime(float(item.get("date_started"))) if item.get("date_started") else None
             event_timestamp = convert_milliseconds_to_datetime(float(item.get("event_timestamp"))) if item.get("event_timestamp") else None
-            date_connected = None  # The example JSON doesn't have date_connected.
+            date_connected = None
             if "date_rang" in item:
                 date_connected = convert_milliseconds_to_datetime(float(item["date_rang"]))
 
-            # Prepare the values for the INSERT statement.  The order must match the
-            # order of the columns in the INSERT statement.
             values = (
                 item.get("call_id"),
                 contact_data.get("email"),
@@ -136,7 +171,7 @@ def write_dialpad_data_to_azure_sql(json_data, connection_string):
                 item.get("internal_number"),
                 item.get("is_transferred"),
                 item.get("mos_score"),
-                None,  # proxy_target_id -  The example JSON doesn't have proxy_target.
+                None,  # proxy_target_id
                 item.get("state"),
                 target_data.get("email"),
                 target_data.get("id"),
@@ -146,30 +181,28 @@ def write_dialpad_data_to_azure_sql(json_data, connection_string):
                 item.get("total_duration"),
                 item.get("was_recorded"),
             )
-            rows.append(values)
+            values_list.append(values)  # Append the tuple to the list
+
         except Exception as e:
-            print(f"Error processing record for call_id: {item.get('call_id')}. Details: {e}")
-            print(f"Problematic data: {item}")
-            #  Don't rollback here,  process the rest and log the errors
+            print(f"Error processing record for call_id: {item.get('call_id')}.  Skipping. Details: {e}")
+            continue  # Skip the current record and continue to the next.
 
-    # Perform the bulk insert if there are rows to insert.
-    if rows:
-        try:
-            cursor.executemany(insert_statement, rows)
-            conn.commit()
-            print(f"Successfully inserted {len(rows)} records into {table_name}")
-        except pyodbc.Error as e:
-            print(f"Error performing bulk insert. Details: {e}")
-            conn.rollback()  # Rollback the entire transaction on error
-    else:
-        print("No data to insert.")
+    try:
+        # Execute the bulk insert using executemany().
+        cursor.executemany(insert_statement, values_list)
+        conn.commit()
+        print(f"Successfully inserted {len(values_list)} records into {table_name}")
 
-    # Close the database connection.  Important to free up resources.
-    cursor.close()
-    conn.close()
-    print("Successfully closed the database connection.")
+    except pyodbc.Error as e:
+        print(f"Error performing bulk insert. Details: {e}")
+        conn.rollback()
 
-
+    finally:
+        # Close the database connection.  Important to free up resources.
+        cursor.close()
+        conn.close()
+        print("Successfully closed the database connection.")
+        
 def dialpad_api_request():
     # Load environment variables
     # api_endpoint = os.getenv('API_ENDPOINT')
