@@ -16,9 +16,11 @@ api_endpoint = 'https://dialpad.com/api/v2/call'
 api_token = 'JzEWbTUAQ7Msvd2Qha58hk2dmthVdFVmrgmTGVXg2RbyTBU4BAzsBDk6x8EKc6YxC7XrLxMbvjNY37pWhtDC8mLRkuUFyaU7YjGD'
 MAX_REQUESTS_PER_MINUTE = 1000  # Setting a slightly lower limit for safety
 MIN_DELAY_SECONDS = 60.0 / MAX_REQUESTS_PER_MINUTE
-connection_string = 'Driver={ODBC Driver 17 for SQL Server};Server=tcp:lendz.database.windows.net,1433;Database=Lexi_DEV;Uid=lexi;Pwd=H3n4y*_D@;Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;'
+connection_string = 'Driver={ODBC Driver 18 for SQL Server};Server=tcp:lendz.database.windows.net,1433;Database=Lexi_DEV;Uid=lexi;Pwd=H3n4y*_D@;Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;'
 
 app = func.FunctionApp()
+
+logging.basicConfig(level=logging.INFO) 
 
 @app.timer_trigger(schedule="0 5 * * * *", arg_name="myTimer", run_on_startup=True,
               use_monitor=False) 
@@ -28,10 +30,10 @@ def get_dialpad_calls(myTimer: func.TimerRequest) -> None:
 
     logging.info('Python timer trigger function executed.')
 
-    if mytimer.past_due:
+    if myTimer.past_due:
         logging.info('The timer is past due!')
 
-    logging.info('Python timer trigger function ran at %s', utc_timestamp)
+    logging.info('Python timer trigger function ran at %s', time.time())
     dialpad_api_request()
 
 def convert_milliseconds_to_datetime(milliseconds):
@@ -203,7 +205,7 @@ def write_dialpad_data_to_azure_sql(json_data, connection_string):
         conn.close()
         print("Successfully closed the database connection.")
         
-def dialpad_api_request():
+def dialpad_api_request(api_start_time=None, api_end_time=None):
     # Load environment variables
     # api_endpoint = os.getenv('API_ENDPOINT')
     # api_token = os.getenv('API_TOKEN')
@@ -213,20 +215,19 @@ def dialpad_api_request():
     request_count = 0
     start_time = time.time()
 
+    api_start_time = api_start_time if api_start_time is not None else time.time()
+    # Get current time in seconds since epoch
+    # Subtract 2 hours (2 * 3600 seconds)
+    two_hours_ago = api_start_time - (2 * 3600)
+    # Convert to milliseconds
+    two_hours_ago_millis = int(two_hours_ago * 1000)
+    started_after_timestamp = two_hours_ago_millis
     # Initialize BlobServiceClient outside the loop
     try:
         blob_service_client = BlobServiceClient.from_connection_string(storage_connection_string)
     except Exception as e:
         logging.error(f'Error creating BlobServiceClient: {e}')
         return  # Exit if BlobServiceClient cannot be created
-
-    # Get current time in seconds since epoch
-    current_time = time.time()
-    # Subtract 2 hours (2 * 3600 seconds)
-    two_hours_ago = current_time - (2 * 3600)
-    # Convert to milliseconds
-    two_hours_ago_millis = int(two_hours_ago * 1000)
-    started_after_timestamp = two_hours_ago_millis
     
     while True:
         current_time = time.time()
@@ -244,6 +245,10 @@ def dialpad_api_request():
 
         current_endpoint = api_endpoint
         params = {'started_after': started_after_timestamp}
+
+        if api_end_time is not None:
+            params['started_before'] = api_end_time*1000
+
         if next_cursor:
             params['cursor'] = next_cursor
             logging.info(f'Making API request {request_count + 1} with cursor: {next_cursor} and started_after: {started_after_timestamp}')
@@ -293,6 +298,11 @@ def dialpad_api_request():
 
 
 if __name__ == "__main__":
-    dialpad_api_request()
-
-
+    # Define Eastern Time Zone
+    eastern = pytz.timezone('America/New_York')
+    dt = eastern.localize(datetime.datetime(2025, 5, 5, 0, 0))
+    epoch_time = int(dt.timestamp())
+    print(epoch_time)
+    api_end_time = int((eastern.localize(datetime.datetime(2025, 5, 9, 0, 0))).timestamp())
+    print(api_end_time)
+    dialpad_api_request(api_start_time=epoch_time, api_end_time=api_end_time)
