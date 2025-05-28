@@ -16,7 +16,7 @@ api_endpoint = 'https://dialpad.com/api/v2/call'
 api_token = 'JzEWbTUAQ7Msvd2Qha58hk2dmthVdFVmrgmTGVXg2RbyTBU4BAzsBDk6x8EKc6YxC7XrLxMbvjNY37pWhtDC8mLRkuUFyaU7YjGD'
 MAX_REQUESTS_PER_MINUTE = 1000  # Setting a slightly lower limit for safety
 MIN_DELAY_SECONDS = 60.0 / MAX_REQUESTS_PER_MINUTE
-connection_string = 'Driver={ODBC Driver 18 for SQL Server};Server=tcp:lendz.database.windows.net,1433;Database=Lexi_DEV;Uid=lexi;Pwd=H3n4y*_D@;Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;'
+connection_string = 'Driver={ODBC Driver 18 for SQL Server};Server=tcp:lendz.database.windows.net,1433;Database=Lexi;Uid=lexi;Pwd=H3n4y*_D@;Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;'
 
 app = func.FunctionApp()
 
