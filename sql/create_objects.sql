@@ -72,7 +72,6 @@ CREATE TABLE dbo.LoanPASS_Price_Scenarios (
     LoanPASS_Product_Offering_Id INT NOT NULL,
 
     -- Custom Fields
-    External_Id__c NVARCHAR(255) NULL UNIQUE,
     Adjusted_Rate__c DECIMAL(18,3) NULL,
     Adjusted_Price__c DECIMAL(18,2) NULL,
     Adjusted_Rate_Lock_Count__c DECIMAL(18,0) NULL,
