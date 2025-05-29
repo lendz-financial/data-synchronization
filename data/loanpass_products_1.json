@@ -1,0 +1,3236 @@
+{
+  "productId": "39930",
+  "productName": "Gold 30 Year Fixed",
+  "productCode": "OBFCSPF30",
+  "investorName": "Series 6",
+  "investorCode": "OBFC",
+  "isPricingEnabled": true,
+  "productFields": [],
+  "calculatedFields": [
+    {
+      "fieldId": "calc@months-since-chapter-7-bankruptcy",
+      "value": null
+    },
+    {
+      "fieldId": "calc@months-since-chapter-13-bankruptcy",
+      "value": null
+    },
+    {
+      "fieldId": "calc@total-loan-amount",
+      "value": {
+        "type": "number",
+        "value": "450000.00"
+      }
+    },
+    {
+      "fieldId": "calc@loan-term",
+      "value": {
+        "type": "duration",
+        "count": "360",
+        "unit": "months"
+      }
+    },
+    {
+      "fieldId": "calc@second-lien-cltv",
+      "value": {
+        "type": "number",
+        "value": "0"
+      }
+    },
+    {
+      "fieldId": "calc@months-since-short-sale",
+      "value": null
+    },
+    {
+      "fieldId": "calc@months-since-foreclosure",
+      "value": null
+    },
+    {
+      "fieldId": "calc@months-since-chapter-11-bankruptcy",
+      "value": null
+    },
+    {
+      "fieldId": "calc@total-lien-balance",
+      "value": null
+    },
+    {
+      "fieldId": "calc@ltv",
+      "value": {
+        "type": "number",
+        "value": "45.00"
+      }
+    },
+    {
+      "fieldId": "calc@months-since-deed-in-lieu",
+      "value": null
+    },
+    {
+      "fieldId": "calc-field@obfc-state-tier",
+      "value": {
+        "type": "string",
+        "value": "Tier 1"
+      }
+    },
+    {
+      "fieldId": "calc@amortization-type-allowed",
+      "value": {
+        "type": "enum",
+        "enumTypeId": "yes-no",
+        "variantId": "yes"
+      }
+    },
+    {
+      "fieldId": "calc@lien-position-allowed",
+      "value": {
+        "type": "enum",
+        "enumTypeId": "yes-no",
+        "variantId": "yes"
+      }
+    },
+    {
+      "fieldId": "calc@months-since-forbearance",
+      "value": null
+    }
+  ],
+  "status": "ok",
+  "rateSheetEffectiveTimestamp": "2025-05-29T13:43:17.480225Z",
+  "priceScenarios": [
+    {
+      "id": "b48522ad80320bc0f3ce77c5548afe0a",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "11.5"
+          }
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "4456.32"
+          }
+        }
+      ],
+      "adjustedRate": "11.5",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "e1b3237f98c6aea0537d4cbadd8656a1",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "11.375"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "4413.45"
+          }
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        }
+      ],
+      "adjustedRate": "11.375",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "3961bc6a047117f8777bc4b79648b9a7",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "11.25"
+          }
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "4370.68"
+          }
+        }
+      ],
+      "adjustedRate": "11.25",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "18090ceee72b30b40464b6d4d8e4d8b8",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "4328.02"
+          }
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "11.125"
+          }
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        }
+      ],
+      "adjustedRate": "11.125",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "f01d4dca504e187b1a9a9ddf8abcfe47",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "4285.46"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "11"
+          }
+        }
+      ],
+      "adjustedRate": "11",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "1eeb643d7f1bc100519eba5ca1f3654c",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "4243.01"
+          }
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "10.875"
+          }
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        }
+      ],
+      "adjustedRate": "10.875",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "0984a3984ee9364ec1f0b67f58f8821d",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "10.75"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "4200.67"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        }
+      ],
+      "adjustedRate": "10.75",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "44d6ba1bd9a2cb8568019e34f85d51fd",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "10.625"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "4158.44"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        }
+      ],
+      "adjustedRate": "10.625",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "2f032f9e123dbfb3cce2a3e172d14fde",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "4116.33"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "10.5"
+          }
+        }
+      ],
+      "adjustedRate": "10.5",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "edea6f989576feca74ac0ef5d7986aa3",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "10.375"
+          }
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "4074.34"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        }
+      ],
+      "adjustedRate": "10.375",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "efce9f726fa0f1a9373ccffecc599192",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "4032.46"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "10.25"
+          }
+        }
+      ],
+      "adjustedRate": "10.25",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "3ad849ff43972e909a4153bd22397f64",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "10.125"
+          }
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "3990.71"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        }
+      ],
+      "adjustedRate": "10.125",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "8cd48d808cd39f09829e5e48af73c205",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "3949.08"
+          }
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "10"
+          }
+        }
+      ],
+      "adjustedRate": "10",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "701f1f062e52f67e873d4e608605fb75",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "3907.57"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "9.875"
+          }
+        }
+      ],
+      "adjustedRate": "9.875",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "557da10db95584ceddad383034372745",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "9.75"
+          }
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "3866.20"
+          }
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        }
+      ],
+      "adjustedRate": "9.75",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "7daea40b3f68d7c3946e33f2be26195c",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "9.625"
+          }
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "3824.96"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        }
+      ],
+      "adjustedRate": "9.625",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "baee6d2fd57d2430c300a10e6758f2ae",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "3783.85"
+          }
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "9.5"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        }
+      ],
+      "adjustedRate": "9.5",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "8ae56c7ba2ec0b2fee98c200af073923",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "3742.88"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "9.375"
+          }
+        }
+      ],
+      "adjustedRate": "9.375",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "1601977e96de3842bb6fe8a57207d328",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "3702.04"
+          }
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "9.25"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        }
+      ],
+      "adjustedRate": "9.25",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "11b9002bab784cdde330adff8e307b10",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "9.125"
+          }
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "3661.35"
+          }
+        }
+      ],
+      "adjustedRate": "9.125",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "af78e95585df619c9e3b0234b281c259",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "3620.81"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "9"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        }
+      ],
+      "adjustedRate": "9",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "5a8b3908f9f975865398ad7eb683c6d7",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "8.875"
+          }
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "3580.41"
+          }
+        }
+      ],
+      "adjustedRate": "8.875",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "b6eabd913326a88e3c56876ceb9d3194",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "8.75"
+          }
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "3540.16"
+          }
+        }
+      ],
+      "adjustedRate": "8.75",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "6733349c766593c84311099e8ac53f36",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "8.625"
+          }
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "3500.06"
+          }
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        }
+      ],
+      "adjustedRate": "8.625",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "947744408501cee52550d8e132a27828",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "8.5"
+          }
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "3460.12"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        }
+      ],
+      "adjustedRate": "8.5",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "3c48b21b76618b549ea5c9bf6812824f",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "8.375"
+          }
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "3420.33"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        }
+      ],
+      "adjustedRate": "8.375",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "b6feef6e604e572eacca9861bf59a578",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "8.25"
+          }
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "3380.70"
+          }
+        }
+      ],
+      "adjustedRate": "8.25",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "45ceb1a78a93c23c30491bff828459de",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "3341.24"
+          }
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "8.125"
+          }
+        }
+      ],
+      "adjustedRate": "8.125",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "bbed13a72cd77eff3767e877bcdebe8e",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "8"
+          }
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "3301.95"
+          }
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        }
+      ],
+      "adjustedRate": "8",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "b4585918b8f680a81152d17d44fc3189",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "7.875"
+          }
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "3262.82"
+          }
+        }
+      ],
+      "adjustedRate": "7.875",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "04c5ac312d5f6b18e0ff46a1f2bb915e",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "3223.86"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "7.75"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        }
+      ],
+      "adjustedRate": "7.75",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "1c1238e021e33935505fc0f255446c34",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "3185.08"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "7.625"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        }
+      ],
+      "adjustedRate": "7.625",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "537fd33d47b1c76075d510e41f7bfe50",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "7.5"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "3146.47"
+          }
+        }
+      ],
+      "adjustedRate": "7.5",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "24d370ca6ca6dd8252cb600f2d73d801",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "3108.04"
+          }
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "7.375"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        }
+      ],
+      "adjustedRate": "7.375",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "5b0a953fb650750179411bfa8e500272",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "3069.80"
+          }
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "7.25"
+          }
+        }
+      ],
+      "adjustedRate": "7.25",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "6317d757f5f0301980181e71f00d6b5d",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "7.125"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "3031.74"
+          }
+        }
+      ],
+      "adjustedRate": "7.125",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "8bc75baa0583809b497a668aed79a87b",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "7"
+          }
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "2993.87"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        }
+      ],
+      "adjustedRate": "7",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "8caf109fc58fafef8534ba3831d7cddb",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "6.875"
+          }
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "2956.18"
+          }
+        }
+      ],
+      "adjustedRate": "6.875",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "a701a4d757487324a41f90f21891108f",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "6.75"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "2918.70"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        }
+      ],
+      "adjustedRate": "6.75",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "f9e215954f5af4b8606baf663761bac2",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "2881.40"
+          }
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "6.625"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        }
+      ],
+      "adjustedRate": "6.625",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "3a181a42cd2db953346387a43da6b578",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "2844.31"
+          }
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "6.5"
+          }
+        }
+      ],
+      "adjustedRate": "6.5",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "0670cc72f13a980bafaca042b2b32e85",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "2807.42"
+          }
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "6.375"
+          }
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        }
+      ],
+      "adjustedRate": "6.375",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "077c35cc0695283b24670dd2cc9c5930",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "6.25"
+          }
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "2770.73"
+          }
+        }
+      ],
+      "adjustedRate": "6.25",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "7f666dddcf2450171ea5860bde6e312c",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "6.125"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "2734.25"
+          }
+        }
+      ],
+      "adjustedRate": "6.125",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "4197b5c1b00c0fcf7e252353895605c2",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "6"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "2697.98"
+          }
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        }
+      ],
+      "adjustedRate": "6",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "079cd939a1a9809b7c7fbb0a27ed0441",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "5.875"
+          }
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "2661.92"
+          }
+        }
+      ],
+      "adjustedRate": "5.875",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "46da7adcb49cb236739ae0b65d725b7c",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "2626.08"
+          }
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "5.75"
+          }
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        }
+      ],
+      "adjustedRate": "5.75",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "598eed6016ca61e9158c47902b4cbe4a",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "2590.46"
+          }
+        },
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "5.625"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        }
+      ],
+      "adjustedRate": "5.625",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    },
+    {
+      "id": "fd8a1cb3bc389a691db77c65414e9f6d",
+      "priceScenarioFields": [],
+      "calculatedFields": [
+        {
+          "fieldId": "calc@final-interest-rate",
+          "value": {
+            "type": "number",
+            "value": "5.5"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
+          "value": null
+        },
+        {
+          "fieldId": "calc@mtg-payment",
+          "value": {
+            "type": "number",
+            "value": "2555.06"
+          }
+        },
+        {
+          "fieldId": "calc@adjusted-rate-lock-period",
+          "value": {
+            "type": "duration",
+            "count": "30",
+            "unit": "days"
+          }
+        },
+        {
+          "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
+          "value": null
+        }
+      ],
+      "adjustedRate": "5.5",
+      "adjustedPrice": null,
+      "adjustedRateLockPeriod": {
+        "count": "30",
+        "unit": "days"
+      },
+      "undiscountedRate": null,
+      "startingAdjustedRate": null,
+      "startingAdjustedPrice": null,
+      "status": "error",
+      "errors": [
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84327"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        },
+        {
+          "source": {
+            "type": "rule",
+            "ruleId": "84328"
+          },
+          "type": "blank-field",
+          "fieldId": "field@decision-credit-score"
+        }
+      ]
+    }
+  ],
+  "publishedVersionNumber": "6967"
+}

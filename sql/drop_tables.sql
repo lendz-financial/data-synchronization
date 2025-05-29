@@ -1,3 +1,14 @@
+TRUNCATE TABLE LoanPASS_Price_Scenario_Calculated_Fields;
+TRUNCATE TABLE LoanPASS_Product_Calculated_Fields;
+TRUNCATE TABLE LoanPASS_Price_Scenario_Errors;
+DELETE FROM LoanPASS_Price_Scenarios;
+DELETE FROM LoanPASS_Product_Offerings;
+
+
+++++++++++++++++++++++++++++++++++++++
+
+TRUNCATE TABLE dbo.slack_openai_map;
+
 -- Drop Table Script for LoanPASS Database
 
 -- Drop dbo.LoanPASS_Price_Scenario_Errors
@@ -59,3 +70,4 @@ ELSE
 BEGIN
     PRINT 'Table dbo.LoanPASS_Product_Offerings does not exist.';
 END;
+
