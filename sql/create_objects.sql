@@ -148,3 +148,24 @@ CREATE TABLE dbo.LoanPASS_Price_Scenario_Errors (
         FOREIGN KEY (LoanPASS_Price_Scenario_Id)
         REFERENCES dbo.LoanPASS_Price_Scenarios(Id)
 );
+
+-- If the table might already exist and you want to redefine it,
+-- you can uncomment the DROP TABLE statement below.
+-- CAUTION: This will delete all existing data in the table!
+-- DROP TABLE IF EXISTS dbo.slack_openai_map;
+
+CREATE TABLE dbo.slack_openai_map (
+    slack_ts NVARCHAR(20) NOT NULL, -- Removed PRIMARY KEY
+    openai_thread NVARCHAR(255) NOT NULL, -- Removed UNIQUE
+    created_at DATETIME2 DEFAULT GETDATE() -- New timestamp field, defaults to current date/time on insert
+);
+
+-- Create a non-clustered index on the slack_ts column
+CREATE INDEX IX_slack_openai_map_slack_ts
+ON dbo.slack_openai_map (slack_ts);
+
+ALTER TABLE dbo.slack_openai_map
+ADD category NVARCHAR(255) DEFAULT 'General';
+
+ALTER TABLE dbo.slack_openai_map
+ALTER COLUMN category NVARCHAR(64);
