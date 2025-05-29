@@ -64,7 +64,7 @@ def call_loanpass_api(endpoint, json_data_for_api):
     }
 
     print(f"\nCalling LoanPASS API: {endpoint}")
-    print(f"Request Payload: {json.dumps(json_data_for_api, indent=2)}") # Un-commented for logging
+    print(f"Request Payload: {json.dumps(json_data_for_api, indent=2)}")
     try:
         response = requests.post(endpoint, headers=headers, json=json_data_for_api, timeout=60) # Increased timeout
         response.raise_for_status() # Raise an HTTPError for bad responses (4xx or 5xx)
@@ -72,7 +72,7 @@ def call_loanpass_api(endpoint, json_data_for_api):
         print(f"LoanPASS API call successful. Status Code: {response.status_code}")
         api_response_json = response.json()
         print("API Response JSON received.")
-        print(f"API Response: {json.dumps(api_response_json, indent=2)}") # Added for logging API response
+        print(f"API Response: {json.dumps(api_response_json, indent=2)}")
         return api_response_json # Return the JSON response from the API
     except requests.exceptions.HTTPError as http_err:
         print(f"HTTP error occurred during API call to {endpoint}: {http_err}")
@@ -367,7 +367,7 @@ def insert_price_scenario_errors(cursor, price_scenario_id, errors_data):
     print(f"    Inserted {len(errors_data)} Price Scenario Errors for Scenario Id: {price_scenario_id}")
 
 
-def process_loan_pass_data():
+def process_loan_pass_data(initial_summary_request_data=None):
     """
     Orchestrates the process:
     1. Calls the /execute-summary API to get a list of products.
@@ -378,8 +378,13 @@ def process_loan_pass_data():
     conn = None
     try:
         # --- 1. Prepare and Call /execute-summary API ---
-        summary_request_data = loanpass_summary_api_request_template.copy()
-        summary_request_data["currentTime"] = datetime.datetime.now().astimezone().isoformat()
+        if initial_summary_request_data:
+            summary_request_data = initial_summary_request_data
+            # Ensure currentTime is updated even if provided via file
+            summary_request_data["currentTime"] = datetime.datetime.now().astimezone().isoformat()
+        else:
+            summary_request_data = loanpass_summary_api_request_template.copy()
+            summary_request_data["currentTime"] = datetime.datetime.now().astimezone().isoformat()
 
         summary_response = call_loanpass_api(LOANPASS_SUMMARY_API_ENDPOINT, summary_request_data)
 
@@ -485,11 +490,23 @@ def process_loan_pass_data():
 
 # --- Main Execution ---
 if __name__ == "__main__":
-    # No need to load JSON from command line anymore, as the script now fetches it from API.
-    # The command line argument for JSON file path is no longer used.
     if len(sys.argv) > 1:
-        print("Note: Command-line argument for JSON file path is no longer used. Data is fetched from LoanPASS API.")
-
-    print("Starting data processing and API calls...")
-    process_loan_pass_data()
+        json_file_path = sys.argv[1]
+        try:
+            with open(json_file_path, 'r') as f:
+                initial_summary_payload = json.load(f)
+            print(f"JSON data loaded from file: {json_file_path} for initial summary API call.")
+            process_loan_pass_data(initial_summary_payload)
+        except FileNotFoundError:
+            print(f"Error: The file '{json_file_path}' was not found.")
+            sys.exit(1)
+        except json.JSONDecodeError as e:
+            print(f"Error decoding JSON from file '{json_file_path}': {e}")
+            sys.exit(1)
+        except Exception as e:
+            print(f"An error occurred during file processing: {e}")
+            sys.exit(1)
+    else:
+        print("No JSON file path provided. Using default summary API request template.")
+        process_loan_pass_data() # Call without argument to use default template
     print("Process finished.")
