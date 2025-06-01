@@ -169,3 +169,21 @@ ADD category NVARCHAR(255) DEFAULT 'General';
 
 ALTER TABLE dbo.slack_openai_map
 ALTER COLUMN category NVARCHAR(64);
+
+ALTER TABLE dbo.slack_openai_map
+ADD recipient NVARCHAR(64) DEFAULT 'recipient';
+
+ALTER TABLE dbo.slack_openai_map
+ADD recipient_email NVARCHAR(255) DEFAULT 'recipient@lendzfinancial.com';
+
+ALTER TABLE dbo.slack_openai_map
+ADD successful BIT DEFAULT 0;
+
+
+ALTER TABLE dbo.slack_openai_map
+ADD CONSTRAINT PK_slack_openai_map PRIMARY KEY (slack_ts);
+
+ALTER TABLE dbo.slack_openai_map
+ADD is_rated BIT DEFAULT 0;
+
+EXEC sp_rename 'dbo.slack_openai_map.successful', 'is_successful', 'COLUMN';
