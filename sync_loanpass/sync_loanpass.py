@@ -83,6 +83,8 @@ def call_loanpass_api(endpoint, json_data_for_api):
         print(f"Error decoding JSON response from API {endpoint}: {json_err}")
         print(f"Raw response content: {response.text}")
         raise
+    
+    
 def process_loan_pass_data(db_connection_string, initial_summary_request_data=None):
     """
     Orchestrates the process:
