@@ -3,6 +3,206 @@ import json
 from datetime import datetime, timezone
 import os
 import random # Import the random module for generating random integers
+import requests
+import sys
+
+#LoanPASS API code
+
+# --- 2. LoanPASS API Configuration ---
+LOANPASS_API_TOKEN = "hdzuN0bgsYcCdp4JM8HOFQ4mbJn8l6"
+
+# Endpoints
+LOANPASS_SUMMARY_API_ENDPOINT = "https://api.loanpass.io/v1/execute-summary"
+LOANPASS_PRODUCT_API_ENDPOINT = "https://api.loanpass.io/v1/execute-product"
+
+# --- 3. JSON Data Structures for API Calls ---
+# Template for the initial /execute-summary API call
+loanpass_summary_api_request_template = {
+    "currentTime": None, # This will be replaced dynamically
+    "pricingProfileId": "291",
+    "creditApplicationFields": [],
+    "publishedVersionRequest": {
+        "type": "current"
+    },
+    "pipelineRecordId": None,
+    "engine": "original",
+    "bypassWorstCase": False
+}
+
+# Template for the subsequent /execute-product API calls
+loanpass_product_api_request_template = {
+    "currentTime": None, # This will be replaced dynamically
+    "productId": None,   # This will be replaced dynamically for each product
+    "pricingProfileId": "291",
+    "creditApplicationFields": [],
+    "outputFieldsFilter": {
+        "type": "all"
+    },
+    "publishedVersionRequest": {
+        "type": "current"
+    },
+    "pipelineRecordId": None,
+    "engine": "original",
+    "bypassWorstCase": False
+}
+
+def call_loanpass_api(endpoint, json_data_for_api):
+    """
+    Generic function to call a LoanPASS API endpoint with the provided JSON data.
+    """
+    headers = {
+        "Authorization": f"Bearer {LOANPASS_API_TOKEN}",
+        "Content-Type": "application/json"
+    }
+
+    print(f"\nCalling LoanPASS API: {endpoint}")
+    print(f"Request Payload: {json.dumps(json_data_for_api, indent=2)}")
+    try:
+        response = requests.post(endpoint, headers=headers, json=json_data_for_api, timeout=60) # Increased timeout
+        response.raise_for_status() # Raise an HTTPError for bad responses (4xx or 5xx)
+
+        print(f"LoanPASS API call successful. Status Code: {response.status_code}")
+        api_response_json = response.json()
+        print("API Response JSON received.")
+        print(f"API Response: {json.dumps(api_response_json, indent=2)}")
+        return api_response_json # Return the JSON response from the API
+    except requests.exceptions.HTTPError as http_err:
+        print(f"HTTP error occurred during API call to {endpoint}: {http_err}")
+        print(f"Response content: {response.text}")
+        raise # Re-raise the exception to be caught by the main processing logic
+    except requests.exceptions.ConnectionError as conn_err:
+        print(f"Connection error occurred during API call to {endpoint}: {conn_err}")
+        raise
+    except requests.exceptions.Timeout as timeout_err:
+        print(f"Timeout occurred during API call to {endpoint}: {timeout_err}")
+        raise
+    except requests.exceptions.RequestException as req_err:
+        print(f"An unexpected error occurred during API call to {endpoint}: {req_err}")
+        raise
+    except json.JSONDecodeError as json_err:
+        print(f"Error decoding JSON response from API {endpoint}: {json_err}")
+        print(f"Raw response content: {response.text}")
+        raise
+def process_loan_pass_data(db_connection_string, initial_summary_request_data=None):
+    """
+    Orchestrates the process:
+    1. Calls the /execute-summary API to get a list of products.
+    2. For each product, calls the /execute-product API to get detailed data.
+    3. Inserts/updates the detailed product data into the database tables.
+    Handles transactions for atomicity.
+    """
+    conn = None
+    try:
+        # --- 1. Prepare and Call /execute-summary API ---
+        if initial_summary_request_data:
+            summary_request_data = initial_summary_request_data
+            # Ensure currentTime is updated even if provided via file
+            summary_request_data["currentTime"] = datetime.now().astimezone().isoformat()
+        else:
+            summary_request_data = loanpass_summary_api_request_template.copy()
+            summary_request_data["currentTime"] = datetime.now().astimezone().isoformat()
+
+        summary_response = call_loanpass_api(LOANPASS_SUMMARY_API_ENDPOINT, summary_request_data)
+
+        if not summary_response or "products" not in summary_response:
+            print("Summary API response was empty or missing 'products' key. Aborting database operations.")
+            return
+
+        products_list = summary_response["products"]
+        if not products_list:
+            print("No products found in the summary API response. Aborting database operations.")
+            return
+
+        print(f"Found {len(products_list)} products from summary API. Proceeding to fetch details and insert.")
+
+        # Establish database connection once for all product insertions
+        conn = get_db_connection(db_connection_string)
+        cursor = conn.cursor()
+
+        # --- 2. Iterate through products and call /execute-product API for each ---
+        for product_summary in products_list:
+            product_id_to_fetch = product_summary.get("productId")
+            if not product_id_to_fetch:
+                print(f"Skipping product due to missing 'productId' in summary: {product_summary}")
+                continue
+
+            print(f"\n--- Processing Product ID: {product_id_to_fetch} ---")
+
+            # Prepare payload for /execute-product API
+            product_detail_request_data = loanpass_product_api_request_template.copy()
+            product_detail_request_data["currentTime"] = datetime.now().astimezone().isoformat()
+            product_detail_request_data["productId"] = product_id_to_fetch
+
+            try:
+                # Call /execute-product API for detailed product data
+                product_details_response = call_loanpass_api(LOANPASS_PRODUCT_API_ENDPOINT, product_detail_request_data)
+
+                # IMPORTANT ASSUMPTION:
+                # We assume 'product_details_response' has the structure needed for DB insertion.
+                # If the actual API response structure is different, you will need to
+                # transform 'product_details_response' into the expected database-friendly format here.
+                data_for_db_insertion = product_details_response
+
+                if not data_for_db_insertion:
+                    print(f"No detailed data received for Product ID {product_id_to_fetch}. Skipping database insertion for this product.")
+                    continue
+
+                # Start a transaction for each product's full data insertion
+                # (Alternatively, you could have one large transaction for all products,
+                # but per-product transactions are safer if one product fails)
+                conn.autocommit = False # Ensure transaction is active
+
+                # 1. Insert/Update into LoanPASS_Product_Offerings
+                product_offering_id = insert_product_offering(cursor, data_for_db_insertion)
+
+                # 2. Insert into LoanPASS_Product_Calculated_Fields
+                if "calculatedFields" in data_for_db_insertion:
+                    insert_product_calculated_fields(cursor, product_offering_id, data_for_db_insertion["calculatedFields"])
+
+                # 3. Process Price Scenarios and their nested data
+                if "priceScenarios" in data_for_db_insertion:
+                    for scenario in data_for_db_insertion["priceScenarios"]:
+                        price_scenario_id = insert_price_scenario(cursor, product_offering_id, scenario)
+
+                        # Insert into LoanPASS_Price_Scenario_Calculated_Fields
+                        if "calculatedFields" in scenario:
+                            insert_price_scenario_calculated_fields(cursor, price_scenario_id, scenario["calculatedFields"])
+
+                        # Insert into LoanPASS_Price_Scenario_Errors
+                        if "errors" in scenario:
+                            insert_price_scenario_errors(cursor, price_scenario_id, scenario["errors"])
+
+                # Commit the transaction for this product if all operations are successful
+                conn.commit()
+                print(f"Successfully inserted/updated data for Product ID: {product_id_to_fetch}")
+
+            except (requests.exceptions.RequestException, pyodbc.Error, json.JSONDecodeError) as e:
+                print(f"Error processing Product ID {product_id_to_fetch}: {e}")
+                if conn:
+                    conn.rollback() # Rollback current product's transaction on error
+                    print(f"Transaction rolled back for Product ID: {product_id_to_fetch}.")
+                # Continue to the next product even if one fails
+                continue
+
+    except requests.exceptions.RequestException as e:
+        print(f"\nInitial API Call Error: {e}")
+        # No database rollback needed here as no transaction was started or committed
+    except pyodbc.Error as ex:
+        sqlstate = ex.args[0]
+        print(f"\nDatabase Error (during initial setup or outer loop): {sqlstate}")
+        print(f"Error details: {ex.args[1]}")
+        if conn:
+            conn.rollback() # Rollback any open transaction if error occurred outside per-product loop
+            print("Database transaction rolled back due to outer error.")
+    except Exception as e:
+        print(f"\nAn unexpected error occurred (outer loop): {e}")
+        if conn:
+            conn.rollback() # Rollback on unexpected error during database operations
+            print("Database transaction rolled back due to unexpected outer error.")
+    finally:
+        if conn:
+            conn.close()
+            print("Database connection closed.")
 
 # --- Database Connection Configuration ---
 # IMPORTANT: Replace this with your actual SQL Server connection string.
@@ -2013,6 +2213,7 @@ sample_json_data = {
   }
 }
 
+
 def main():
     """
     Main function to execute the JSON processing and database insertion.
@@ -2023,7 +2224,8 @@ def main():
     if not my_connection_string:
         raise ValueError("SQL_CONNECTION_STRING environment variable not set. Please set it before running the script.")
 
-    process_loanpass_json(sample_json_data, my_connection_string)
+    #process_loanpass_json(sample_json_data, my_connection_string)
+    process_loan_pass_data(my_connection_string)
 
 if __name__ == "__main__":
     main()
