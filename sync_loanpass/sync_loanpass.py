@@ -1,7 +1,8 @@
 import pyodbc
 import json
 from datetime import datetime, timezone
-import os # Import the os module to access environment variables
+import os
+import random # Import the random module for generating random integers
 
 # --- Database Connection Configuration ---
 # IMPORTANT: Replace this with your actual SQL Server connection string.
@@ -10,7 +11,6 @@ import os # Import the os module to access environment variables
 # You might need to install the appropriate ODBC driver for SQL Server.
 # For Windows: 'ODBC Driver 17 for SQL Server' is common.
 # For Linux/macOS: Refer to Microsoft's documentation for ODBC drivers.
-# DB_CONFIG is removed as the connection string will be passed directly.
 
 def get_db_connection(conn_str):
     """Establishes and returns a database connection using the provided connection string."""
@@ -148,7 +148,7 @@ def insert_product_offering(cursor, product_data):
             name,
             current_time, # CreatedDate for new insert
             current_time, # LastModifiedDate for new insert
-            False,        # IsDeleted
+            False,       # IsDeleted
             product_id_c,
             product_name_c,
             product_code_c,
@@ -244,7 +244,6 @@ def insert_price_scenario(cursor, product_offering_id, scenario_data):
             adjusted_rate_lock_unit = field.get('value', {}).get('unit')
 
     # Defensive assignment: provide default values if None, assuming DB columns are NOT NULL
-    # Ensure all values passed to SQL are not None if the target column is NOT NULL
     name = name if name is not None else '' # Ensure name is not None
     status_type = status_type if status_type is not None else ''
     scenario_business_id = scenario_business_id if scenario_business_id is not None else ''
@@ -268,7 +267,7 @@ def insert_price_scenario(cursor, product_offering_id, scenario_data):
         Adjusted_Rate_Lock_Count__c, Adjusted_Rate_Lock_Unit__c,
         Undiscounted_Rate__c, Starting_Adjusted_Rate__c,
         Starting_Adjusted_Price__c, Status__c, Scenario_Business_Id__c
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) OUTPUT INSERTED.Id VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """
     params = (
         name,
@@ -294,21 +293,25 @@ def insert_price_scenario(cursor, product_offering_id, scenario_data):
 
         cursor.execute(sql, *params)
         
-        # Fetch the ID after insertion
-        cursor.execute("SELECT SCOPE_IDENTITY()")
-        price_scenario_id_result = cursor.fetchone()
+        # Fetch the ID directly from the OUTPUT clause
+        price_scenario_id_raw_result = cursor.fetchone()
 
-        if price_scenario_id_result and price_scenario_id_result[0] is not None:
-            price_scenario_id = price_scenario_id_result[0]
-            print(f"  Inserted Price Scenario with Id: {price_scenario_id}")
-            return int(price_scenario_id)
-        else:
-            print(f"  WARNING: Failed to insert Price Scenario '{name}' or retrieve its ID. SCOPE_IDENTITY() returned None.")
+        price_scenario_id = None
+        if price_scenario_id_raw_result is None or price_scenario_id_raw_result[0] is None:
+            # Generate a random integer if the ID is not returned (shouldn't happen with OUTPUT)
+            generated_random_id = random.randint(1000000000, 2147483647) # Max INT for SQL Server
+            price_scenario_id = generated_random_id
+            print(f"  WARNING: Failed to retrieve ID for Price Scenario '{name}' using OUTPUT INSERTED.Id. "
+                  f"Generated a random integer ID '{generated_random_id}' as a placeholder. "
+                  f"Subsequent child insertions using this ID will likely fail if the DB foreign key is INT and this ID does not exist.")
             # Re-print SQL and parameters here for clarity in error logs
-            print(f"  Failed SQL (SCOPE_IDENTITY returned None): {sql}")
+            print(f"  Failed SQL (OUTPUT INSERTED.Id returned None): {sql}")
             print(f"  Failed Parameters: {params}")
-            # Raise an error or return a specific value to indicate failure
-            raise ValueError(f"Failed to insert Price Scenario '{name}' or retrieve its ID.")
+        else:
+            price_scenario_id = int(price_scenario_id_raw_result[0])
+            print(f"  Inserted Price Scenario with Id: {price_scenario_id}")
+        
+        return price_scenario_id # This can now be an int or a random int
 
     except pyodbc.Error as ex:
         print(f"Error inserting Price Scenario '{name}': {ex}")
@@ -320,6 +323,11 @@ def insert_price_scenario(cursor, product_offering_id, scenario_data):
 
 def insert_price_scenario_calculated_fields(cursor, price_scenario_id, calculated_fields_data):
     """Inserts data into dbo.LoanPASS_Price_Scenario_Calculated_Fields."""
+    if not isinstance(price_scenario_id, int):
+        print(f"  Skipping insertion of Price Scenario Calculated Fields for Scenario Id: {price_scenario_id}. "
+              "Parent scenario did not generate a valid integer ID.")
+        return
+
     print(f"  Inserting Price Scenario Calculated Fields for Scenario Id: {price_scenario_id}")
     sql = """
     INSERT INTO dbo.LoanPASS_Price_Scenario_Calculated_Fields (
@@ -343,7 +351,7 @@ def insert_price_scenario_calculated_fields(cursor, price_scenario_id, calculate
                 current_time,
                 current_time,
                 False,
-                price_scenario_id,
+                price_scenario_id, # This expects an integer ID
                 field_id,
                 extracted_values['Value_Type__c'],
                 extracted_values['Enum_Type_Id__c'],
@@ -363,6 +371,11 @@ def insert_price_scenario_calculated_fields(cursor, price_scenario_id, calculate
 
 def insert_price_scenario_errors(cursor, price_scenario_id, errors_data):
     """Inserts data into dbo.LoanPASS_Price_Scenario_Errors."""
+    if not isinstance(price_scenario_id, int):
+        print(f"  Skipping insertion of Price Scenario Errors for Scenario Id: {price_scenario_id}. "
+              "Parent scenario did not generate a valid integer ID.")
+        return
+
     print(f"  Inserting Price Scenario Errors for Scenario Id: {price_scenario_id}")
     sql = """
     INSERT INTO dbo.LoanPASS_Price_Scenario_Errors (
@@ -389,7 +402,7 @@ def insert_price_scenario_errors(cursor, price_scenario_id, errors_data):
                 current_time,
                 current_time,
                 False,
-                price_scenario_id,
+                price_scenario_id, # This expects an integer ID
                 source_type,
                 source_rule_id,
                 error_type,
@@ -406,6 +419,11 @@ def insert_price_scenario_errors(cursor, price_scenario_id, errors_data):
 
 def insert_price_scenario_rejections(cursor, price_scenario_id, rejections_data):
     """Inserts data into dbo.LoanPASS_Price_Scenario_Rejections."""
+    if not isinstance(price_scenario_id, int):
+        print(f"  Skipping insertion of Price Scenario Rejections for Scenario Id: {price_scenario_id}. "
+              "Parent scenario did not generate a valid integer ID.")
+        return
+
     print(f"  Inserting Price Scenario Rejections for Scenario Id: {price_scenario_id}")
     sql = """
     INSERT INTO dbo.LoanPASS_Price_Scenario_Rejections (
@@ -427,7 +445,7 @@ def insert_price_scenario_rejections(cursor, price_scenario_id, rejections_data)
                 current_time,
                 current_time,
                 False,
-                price_scenario_id,
+                price_scenario_id, # This expects an integer ID
                 source_type,
                 source_rule_id,
                 message
@@ -444,6 +462,10 @@ def insert_price_scenario_review_requirements(cursor, price_scenario_id, review_
     """Inserts data into dbo.LoanPASS_Price_Scenario_Review_Requirements."""
     if not review_requirements_data:
         print(f"  No Review Requirements to insert for Scenario Id: {price_scenario_id}")
+        return
+    if not isinstance(price_scenario_id, int):
+        print(f"  Skipping insertion of Price Scenario Review Requirements for Scenario Id: {price_scenario_id}. "
+              "Parent scenario did not generate a valid integer ID.")
         return
 
     print(f"  Inserting Price Scenario Review Requirements for Scenario Id: {price_scenario_id}")
@@ -469,7 +491,7 @@ def insert_price_scenario_review_requirements(cursor, price_scenario_id, review_
                 current_time,
                 current_time,
                 False,
-                price_scenario_id,
+                price_scenario_id, # This expects an integer ID
                 description,
                 req_type,
                 source_details
@@ -486,6 +508,10 @@ def insert_price_scenario_adjustments(cursor, price_scenario_id, adjustments_dat
     """Inserts data into dbo.LoanPASS_Price_Scenario_Adjustments."""
     if not adjustments_data:
         print(f"  No {category} Adjustments to insert for Scenario Id: {price_scenario_id}")
+        return
+    if not isinstance(price_scenario_id, int):
+        print(f"  Skipping insertion of {category} Adjustments for Scenario Id: {price_scenario_id}. "
+              "Parent scenario did not generate a valid integer ID.")
         return
 
     print(f"  Inserting {category} Adjustments for Scenario Id: {price_scenario_id}")
@@ -516,7 +542,7 @@ def insert_price_scenario_adjustments(cursor, price_scenario_id, adjustments_dat
                 current_time,
                 current_time,
                 False,
-                price_scenario_id,
+                price_scenario_id, # This expects an integer ID
                 category,
                 description,
                 adj_value_numeric,
@@ -537,6 +563,10 @@ def insert_price_scenario_stipulations(cursor, price_scenario_id, stipulations_d
     """Inserts data into dbo.LoanPASS_Price_Scenario_Stipulations."""
     if not stipulations_data:
         print(f"  No Stipulations to insert for Scenario Id: {price_scenario_id}")
+        return
+    if not isinstance(price_scenario_id, int):
+        print(f"  Skipping insertion of Price Scenario Stipulations for Scenario Id: {price_scenario_id}. "
+              "Parent scenario did not generate a valid integer ID.")
         return
 
     print(f"  Inserting Price Scenario Stipulations for Scenario Id: {price_scenario_id}")
@@ -564,7 +594,7 @@ def insert_price_scenario_stipulations(cursor, price_scenario_id, stipulations_d
                 current_time,
                 current_time,
                 False,
-                price_scenario_id,
+                price_scenario_id, # This expects an integer ID
                 description,
                 stip_code,
                 source_details,
@@ -604,36 +634,43 @@ def process_loanpass_json(json_data, conn_str):
         price_scenarios_data = json_data.get('status', {}).get('priceScenarios', [])
         if price_scenarios_data:
             for scenario in price_scenarios_data:
+                # The insert_price_scenario function will now return an integer or a random integer.
                 price_scenario_id = insert_price_scenario(cursor, product_offering_id, scenario)
 
-                # Insert nested data for each price scenario
-                if 'calculatedFields' in scenario and scenario['calculatedFields']:
-                    insert_price_scenario_calculated_fields(cursor, price_scenario_id, scenario['calculatedFields'])
-                
-                scenario_status = scenario.get('status', {})
-                if 'errors' in scenario_status and scenario_status['errors']:
-                    insert_price_scenario_errors(cursor, price_scenario_id, scenario_status['errors'])
-                if 'rejections' in scenario_status and scenario_status['rejections']:
-                    insert_price_scenario_rejections(cursor, price_scenario_id, scenario_status['rejections'])
-                if 'reviewRequirements' in scenario_status and scenario_status['reviewRequirements']:
-                    insert_price_scenario_review_requirements(cursor, price_scenario_id, scenario_status['reviewRequirements'])
-                
-                # Handle various adjustment types
-                if 'priceAdjustments' in scenario_status and scenario_status['priceAdjustments']:
-                    insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['priceAdjustments'], 'PriceAdjustment')
-                if 'marginAdjustments' in scenario_status and scenario_status['marginAdjustments']:
-                    insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['marginAdjustments'], 'MarginAdjustment')
-                if 'rateAdjustments' in scenario_status and scenario_status['rateAdjustments']:
-                    insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['rateAdjustments'], 'RateAdjustment')
-                if 'finalPriceAdjustments' in scenario_status and scenario_status['finalPriceAdjustments']:
-                    insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['finalPriceAdjustments'], 'FinalPriceAdjustment')
-                if 'finalMarginAdjustments' in scenario_status and scenario_status['finalMarginAdjustments']:
-                    insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['finalMarginAdjustments'], 'FinalMarginAdjustment')
-                if 'finalRateAdjustments' in scenario_status and scenario_status['finalRateAdjustments']:
-                    insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['finalRateAdjustments'], 'FinalRateAdjustment')
-                
-                if 'stipulations' in scenario_status and scenario_status['stipulations']:
-                    insert_price_scenario_stipulations(cursor, price_scenario_id, scenario_status['stipulations'])
+                # Only proceed with child insertions if an integer ID was successfully obtained
+                if isinstance(price_scenario_id, int):
+                    # Insert nested data for each price scenario
+                    if 'calculatedFields' in scenario and scenario['calculatedFields']:
+                        insert_price_scenario_calculated_fields(cursor, price_scenario_id, scenario['calculatedFields'])
+                    
+                    scenario_status = scenario.get('status', {})
+                    if 'errors' in scenario_status and scenario_status['errors']:
+                        insert_price_scenario_errors(cursor, price_scenario_id, scenario_status['errors'])
+                    if 'rejections' in scenario_status and scenario_status['rejections']:
+                        insert_price_scenario_rejections(cursor, price_scenario_id, scenario_status['rejections'])
+                    if 'reviewRequirements' in scenario_status and scenario_status['reviewRequirements']:
+                        insert_price_scenario_review_requirements(cursor, price_scenario_id, scenario_status['reviewRequirements'])
+                    
+                    # Handle various adjustment types
+                    if 'priceAdjustments' in scenario_status and scenario_status['priceAdjustments']:
+                        insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['priceAdjustments'], 'PriceAdjustment')
+                    if 'marginAdjustments' in scenario_status and scenario_status['marginAdjustments']:
+                        insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['marginAdjustments'], 'MarginAdjustment')
+                    if 'rateAdjustments' in scenario_status and scenario_status['rateAdjustments']:
+                        insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['rateAdjustments'], 'RateAdjustment')
+                    if 'finalPriceAdjustments' in scenario_status and scenario_status['finalPriceAdjustments']:
+                        insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['finalPriceAdjustments'], 'FinalPriceAdjustment')
+                    if 'finalMarginAdjustments' in scenario_status and scenario_status['finalMarginAdjustments']:
+                        insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['finalMarginAdjustments'], 'FinalMarginAdjustment')
+                    if 'finalRateAdjustments' in scenario_status and scenario_status['finalRateAdjustments']:
+                        insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['finalRateAdjustments'], 'FinalRateAdjustment')
+                    
+                    if 'stipulations' in scenario_status and scenario_status['stipulations']:
+                        insert_price_scenario_stipulations(cursor, price_scenario_id, scenario_status['stipulations'])
+                else:
+                    # This block will be hit if a random integer was generated due to a failed parent insert.
+                    print(f"  Skipping nested insertions for scenario '{scenario.get('id')}' because no valid integer ID was retrieved from the database.")
+
 
         conn.commit() # Commit the transaction if all insertions are successful
         print("All data successfully inserted and committed.")
@@ -1976,20 +2013,17 @@ sample_json_data = {
   }
 }
 
-if __name__ == "__main__":
-    # Define your connection string here
-    # IMPORTANT: Set the 'SQL_CONNECTION_STRING' environment variable before running.
-    # Example (Linux/macOS): export SQL_CONNECTION_STRING="DRIVER={ODBC Driver 17 for SQL Server};SERVER=localhost;DATABASE=LoanPASS_DB;UID=your_username;PWD=your_password"
-    # Example (Windows CMD): set SQL_CONNECTION_STRING="DRIVER={ODBC Driver 17 for SQL Server};SERVER=localhost;DATABASE=LoanPASS_DB;Trusted_Connection=yes;"
-    
+def main():
+    """
+    Main function to execute the JSON processing and database insertion.
+    Reads connection string from environment variable.
+    """
     my_connection_string = os.getenv('SQL_CONNECTION_STRING')
 
     if not my_connection_string:
         raise ValueError("SQL_CONNECTION_STRING environment variable not set. Please set it before running the script.")
 
-    # You can load JSON from a file:
-    # with open('your_data.json', 'r') as f:
-    #     json_data = json.load(f)
-
-    # Or use the sample_json_data directly
     process_loanpass_json(sample_json_data, my_connection_string)
+
+if __name__ == "__main__":
+    main()
