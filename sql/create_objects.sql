@@ -481,6 +481,42 @@ BEGIN
 END
 GO
 
+-- Add Run_Id to dbo.LoanPASS_Product_Offerings
+ALTER TABLE dbo.LoanPASS_Product_Offerings
+ADD Run_Id VARCHAR(50);
+
+-- Add Run_Id to dbo.LoanPASS_Product_Calculated_Fields
+ALTER TABLE dbo.LoanPASS_Product_Calculated_Fields
+ADD Run_Id VARCHAR(50);
+
+-- Add Run_Id to dbo.LoanPASS_Price_Scenarios
+ALTER TABLE dbo.LoanPASS_Price_Scenarios
+ADD Run_Id VARCHAR(50);
+
+-- Add Run_Id to dbo.LoanPASS_Price_Scenario_Calculated_Fields
+ALTER TABLE dbo.LoanPASS_Price_Scenario_Calculated_Fields
+ADD Run_Id VARCHAR(50);
+
+-- Add Run_Id to dbo.LoanPASS_Price_Scenario_Errors
+ALTER TABLE dbo.LoanPASS_Price_Scenario_Errors
+ADD Run_Id VARCHAR(50);
+
+-- Add Run_Id to dbo.LoanPASS_Price_Scenario_Rejections
+ALTER TABLE dbo.LoanPASS_Price_Scenario_Rejections
+ADD Run_Id VARCHAR(50);
+
+-- Add Run_Id to dbo.LoanPASS_Price_Scenario_Review_Requirements
+ALTER TABLE dbo.LoanPASS_Price_Scenario_Review_Requirements
+ADD Run_Id VARCHAR(50);
+
+-- Add Run_Id to dbo.LoanPASS_Price_Scenario_Adjustments
+ALTER TABLE dbo.LoanPASS_Price_Scenario_Adjustments
+ADD Run_Id VARCHAR(50);
+
+-- Add Run_Id to dbo.LoanPASS_Price_Scenario_Stipulations
+ALTER TABLE dbo.LoanPASS_Price_Scenario_Stipulations
+ADD Run_Id VARCHAR(50);
+
 PRINT 'Schema script finished.';
 
 -- If the table might already exist and you want to redefine it,

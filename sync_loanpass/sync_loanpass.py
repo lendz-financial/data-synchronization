@@ -4,188 +4,8 @@ from datetime import datetime, timezone
 import os
 import random # Import the random module for generating random integers
 import requests
-import sys
-
-#LoanPASS API code
-
-# --- 2. LoanPASS API Configuration ---
-LOANPASS_API_TOKEN = "hdzuN0bgsYcCdp4JM8HOFQ4mbJn8l6"
-
-# Endpoints
-LOANPASS_SUMMARY_API_ENDPOINT = "https://api.loanpass.io/v1/execute-summary"
-LOANPASS_PRODUCT_API_ENDPOINT = "https://api.loanpass.io/v1/execute-product"
-
-# --- 3. JSON Data Structures for API Calls ---
-# Template for the initial /execute-summary API call
-loanpass_summary_api_request_template = {
-    "currentTime": None, # This will be replaced dynamically
-    "pricingProfileId": "291",
-    "creditApplicationFields": [],
-    "publishedVersionRequest": {
-        "type": "current"
-    },
-    "pipelineRecordId": None,
-    "engine": "original",
-    "bypassWorstCase": False
-}
-
-# Template for the subsequent /execute-product API calls
-loanpass_product_api_request_template = {
-    "currentTime": None, # This will be replaced dynamically
-    "productId": None,   # This will be replaced dynamically for each product
-    "pricingProfileId": "291",
-    "creditApplicationFields": [],
-    "outputFieldsFilter": {
-        "type": "all"
-    },
-    "publishedVersionRequest": {
-        "type": "current"
-    },
-    "pipelineRecordId": None,
-    "engine": "original",
-    "bypassWorstCase": False
-}
-
-def call_loanpass_api(endpoint, json_data_for_api):
-    """
-    Generic function to call a LoanPASS API endpoint with the provided JSON data.
-    """
-    headers = {
-        "Authorization": f"Bearer {LOANPASS_API_TOKEN}",
-        "Content-Type": "application/json"
-    }
-
-    print(f"\nCalling LoanPASS API: {endpoint}")
-    print(f"Request Payload: {json.dumps(json_data_for_api, indent=2)}")
-    try:
-        response = requests.post(endpoint, headers=headers, json=json_data_for_api, timeout=60) # Increased timeout
-        response.raise_for_status() # Raise an HTTPError for bad responses (4xx or 5xx)
-
-        print(f"LoanPASS API call successful. Status Code: {response.status_code}")
-        api_response_json = response.json()
-        print("API Response JSON received.")
-        print(f"API Response: {json.dumps(api_response_json, indent=2)}")
-        return api_response_json # Return the JSON response from the API
-    except requests.exceptions.HTTPError as http_err:
-        print(f"HTTP error occurred during API call to {endpoint}: {http_err}")
-        print(f"Response content: {response.text}")
-        raise # Re-raise the exception to be caught by the main processing logic
-    except requests.exceptions.ConnectionError as conn_err:
-        print(f"Connection error occurred during API call to {endpoint}: {conn_err}")
-        raise
-    except requests.exceptions.Timeout as timeout_err:
-        print(f"Timeout occurred during API call to {endpoint}: {timeout_err}")
-        raise
-    except requests.exceptions.RequestException as req_err:
-        print(f"An unexpected error occurred during API call to {endpoint}: {req_err}")
-        raise
-    except json.JSONDecodeError as json_err:
-        print(f"Error decoding JSON response from API {endpoint}: {json_err}")
-        print(f"Raw response content: {response.text}")
-        raise
-    
-    
-def process_loan_pass_data(db_connection_string, initial_summary_request_data=None):
-    """
-    Orchestrates the process:
-    1. Calls the /execute-summary API to get a list of products.
-    2. For each product, calls the /execute-product API to get detailed data.
-    3. Inserts/updates the detailed product data into the database tables.
-    Handles transactions for atomicity.
-    """
-    conn = None
-    try:
-        # --- 1. Prepare and Call /execute-summary API ---
-        if initial_summary_request_data:
-            summary_request_data = initial_summary_request_data
-            # Ensure currentTime is updated even if provided via file
-            summary_request_data["currentTime"] = datetime.now().astimezone().isoformat()
-        else:
-            summary_request_data = loanpass_summary_api_request_template.copy()
-            summary_request_data["currentTime"] = datetime.now().astimezone().isoformat()
-
-        summary_response = call_loanpass_api(LOANPASS_SUMMARY_API_ENDPOINT, summary_request_data)
-
-        if not summary_response or "products" not in summary_response:
-            print("Summary API response was empty or missing 'products' key. Aborting database operations.")
-            return
-
-        products_list = summary_response["products"]
-        if not products_list:
-            print("No products found in the summary API response. Aborting database operations.")
-            return
-
-        print(f"Found {len(products_list)} products from summary API. Proceeding to fetch details and insert.")
-
-        # Establish database connection once for all product insertions
-        conn = get_db_connection(db_connection_string)
-        cursor = conn.cursor()
-
-        # --- 2. Iterate through products and call /execute-product API for each ---
-        for product_summary in products_list:
-            product_id_to_fetch = product_summary.get("productId")
-            if not product_id_to_fetch:
-                print(f"Skipping product due to missing 'productId' in summary: {product_summary}")
-                continue
-
-            print(f"\n--- Processing Product ID: {product_id_to_fetch} ---")
-
-            # Prepare payload for /execute-product API
-            product_detail_request_data = loanpass_product_api_request_template.copy()
-            product_detail_request_data["currentTime"] = datetime.now().astimezone().isoformat()
-            product_detail_request_data["productId"] = product_id_to_fetch
-
-            try:
-                # Call /execute-product API for detailed product data
-                product_details_response = call_loanpass_api(LOANPASS_PRODUCT_API_ENDPOINT, product_detail_request_data)
-
-                # IMPORTANT ASSUMPTION:
-                # We assume 'product_details_response' has the structure needed for DB insertion.
-                # If the actual API response structure is different, you will need to
-                # transform 'product_details_response' into the expected database-friendly format here.
-                data_for_db_insertion = product_details_response
-
-                if not data_for_db_insertion:
-                    print(f"No detailed data received for Product ID {product_id_to_fetch}. Skipping database insertion for this product.")
-                    continue
-
-                # Start a transaction for each product's full data insertion
-                # (Alternatively, you could have one large transaction for all products,
-                # but per-product transactions are safer if one product fails)
-                conn.autocommit = False # Ensure transaction is active
-
-                process_loanpass_json(data_for_db_insertion, db_connection_string)
-                # Commit the transaction for this product if all operations are successful
-                conn.commit()
-                print(f"Successfully inserted/updated data for Product ID: {product_id_to_fetch}")
-
-            except (requests.exceptions.RequestException, pyodbc.Error, json.JSONDecodeError) as e:
-                print(f"Error processing Product ID {product_id_to_fetch}: {e}")
-                if conn:
-                    conn.rollback() # Rollback current product's transaction on error
-                    print(f"Transaction rolled back for Product ID: {product_id_to_fetch}.")
-                # Continue to the next product even if one fails
-                continue
-
-    except requests.exceptions.RequestException as e:
-        print(f"\nInitial API Call Error: {e}")
-        # No database rollback needed here as no transaction was started or committed
-    except pyodbc.Error as ex:
-        sqlstate = ex.args[0]
-        print(f"\nDatabase Error (during initial setup or outer loop): {sqlstate}")
-        print(f"Error details: {ex.args[1]}")
-        if conn:
-            conn.rollback() # Rollback any open transaction if error occurred outside per-product loop
-            print("Database transaction rolled back due to outer error.")
-    except Exception as e:
-        print(f"\nAn unexpected error occurred (outer loop): {e}")
-        if conn:
-            conn.rollback() # Rollback on unexpected error during database operations
-            print("Database transaction rolled back due to unexpected outer error.")
-    finally:
-        if conn:
-            conn.close()
-            print("Database connection closed.")
+import uuid # Import uuid for generating unique run IDs
+import sys 
 
 # --- Database Connection Configuration ---
 # IMPORTANT: Replace this with your actual SQL Server connection string.
@@ -270,10 +90,11 @@ def extract_field_values(field_data):
     }
 
 
-def insert_product_offering(cursor, product_data):
+def insert_product_offering(cursor, product_data, run_id):
     """
     Inserts or updates data into dbo.LoanPASS_Product_Offerings (upsert)
     based on Product_Code__c and returns its Id.
+    Includes Run_Id.
     """
     current_time = datetime.now(timezone.utc)
     name = product_data.get('productName', f"Product {product_data.get('productId', 'Unknown')}")
@@ -288,14 +109,14 @@ def insert_product_offering(cursor, product_data):
 
     print(f"Upserting Product Offering for Product Code: {product_code_c}")
 
-    # SQL MERGE statement for upsert
+    # SQL MERGE statement for upsert, including Run_Id
     sql = """
     MERGE INTO dbo.LoanPASS_Product_Offerings AS target
-    USING (VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)) AS source (
+    USING (VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)) AS source (
         Name, CreatedDate, LastModifiedDate, IsDeleted,
         Product_Id__c, Product_Name__c, Product_Code__c,
         Investor_Name__c, Investor_Code__c, Is_Pricing_Enabled__c,
-        Status__c, Rate_Sheet_Effective_Timestamp__c
+        Status__c, Rate_Sheet_Effective_Timestamp__c, Run_Id
     )
     ON (target.Product_Code__c = source.Product_Code__c)
     WHEN MATCHED THEN
@@ -309,19 +130,20 @@ def insert_product_offering(cursor, product_data):
             target.Is_Pricing_Enabled__c = source.Is_Pricing_Enabled__c,
             target.Status__c = source.Status__c,
             target.Rate_Sheet_Effective_Timestamp__c = source.Rate_Sheet_Effective_Timestamp__c,
-            target.IsDeleted = source.IsDeleted -- Also update IsDeleted if it changes
+            target.IsDeleted = source.IsDeleted, -- Also update IsDeleted if it changes
+            target.Run_Id = source.Run_Id -- Update Run_Id
     WHEN NOT MATCHED THEN
         INSERT (
             Name, CreatedDate, LastModifiedDate, IsDeleted,
             Product_Id__c, Product_Name__c, Product_Code__c,
             Investor_Name__c, Investor_Code__c, Is_Pricing_Enabled__c,
-            Status__c, Rate_Sheet_Effective_Timestamp__c
+            Status__c, Rate_Sheet_Effective_Timestamp__c, Run_Id
         )
         VALUES (
             source.Name, source.CreatedDate, source.LastModifiedDate, source.IsDeleted,
             source.Product_Id__c, source.Product_Name__c, source.Product_Code__c,
             source.Investor_Name__c, source.Investor_Code__c, source.Is_Pricing_Enabled__c,
-            source.Status__c, source.Rate_Sheet_Effective_Timestamp__c
+            source.Status__c, source.Rate_Sheet_Effective_Timestamp__c, source.Run_Id
         )
     OUTPUT INSERTED.Id;
     """
@@ -340,6 +162,7 @@ def insert_product_offering(cursor, product_data):
             is_pricing_enabled_c,
             status_c,
             rate_sheet_effective_timestamp_c,
+            str(run_id), # Run_Id for source
             current_time # LastModifiedDate for update
         )
         product_offering_id = cursor.fetchone()[0]
@@ -349,10 +172,11 @@ def insert_product_offering(cursor, product_data):
         print(f"Error upserting Product Offering '{name}' (Code: {product_code_c}): {ex}")
         raise
 
-def insert_product_calculated_fields(cursor, product_offering_id, product_fields_data, is_calculated=False):
+def insert_product_calculated_fields(cursor, product_offering_id, product_fields_data, run_id, is_calculated=False):
     """
     Inserts data into dbo.LoanPASS_Product_Calculated_Fields.
     Can handle both 'productFields' and 'calculatedFields' from the top level.
+    Includes Run_Id.
     """
     table_name = "dbo.LoanPASS_Product_Calculated_Fields"
     print(f"Inserting {'Calculated' if is_calculated else 'Product'} Fields for Product Offering Id: {product_offering_id}")
@@ -361,8 +185,8 @@ def insert_product_calculated_fields(cursor, product_offering_id, product_fields
         Name, CreatedDate, LastModifiedDate, IsDeleted,
         LoanPASS_Product_Offering_Id, Field_Id__c, Value_Type__c,
         Enum_Type_Id__c, Variant_Id__c, Number_Value__c,
-        String_Value__c, Duration_Count__c, Duration_Unit__c
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        String_Value__c, Duration_Count__c, Duration_Unit__c, Run_Id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """.format(table_name)
 
     current_time = datetime.now(timezone.utc)
@@ -387,15 +211,19 @@ def insert_product_calculated_fields(cursor, product_offering_id, product_fields
                 extracted_values['Number_Value__c'],
                 extracted_values['String_Value__c'],
                 extracted_values['Duration_Count__c'],
-                extracted_values['Duration_Unit__c']
+                extracted_values['Duration_Unit__c'],
+                str(run_id) # Run_Id
             )
             print(f"  Inserted Product {'Calculated' if is_calculated else ''} Field: {name}")
         except pyodbc.Error as ex:
             print(f"  Error inserting Product {'Calculated' if is_calculated else ''} Field '{name}': {ex}")
             raise
 
-def insert_price_scenario(cursor, product_offering_id, scenario_data):
-    """Inserts data into dbo.LoanPASS_Price_Scenarios and returns its Id."""
+def insert_price_scenario(cursor, product_offering_id, scenario_data, run_id):
+    """
+    Inserts data into dbo.LoanPASS_Price_Scenarios and returns its Id.
+    Includes Run_Id.
+    """
     current_time = datetime.now(timezone.utc)
     scenario_business_id = scenario_data.get('id')
     name = scenario_data.get('Name', f"Scenario {scenario_business_id or 'Unknown'}")
@@ -449,8 +277,8 @@ def insert_price_scenario(cursor, product_offering_id, scenario_data):
         LoanPASS_Product_Offering_Id, Adjusted_Rate__c, Adjusted_Price__c,
         Adjusted_Rate_Lock_Count__c, Adjusted_Rate_Lock_Unit__c,
         Undiscounted_Rate__c, Starting_Adjusted_Rate__c,
-        Starting_Adjusted_Price__c, Status__c, Scenario_Business_Id__c
-    ) OUTPUT INSERTED.Id VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        Starting_Adjusted_Price__c, Status__c, Scenario_Business_Id__c, Run_Id
+    ) OUTPUT INSERTED.Id VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """
     params = (
         name,
@@ -466,7 +294,8 @@ def insert_price_scenario(cursor, product_offering_id, scenario_data):
         starting_adjusted_rate,
         starting_adjusted_price,
         status_type,
-        scenario_business_id
+        scenario_business_id,
+        str(run_id) # Run_Id
     )
 
     try:
@@ -504,8 +333,11 @@ def insert_price_scenario(cursor, product_offering_id, scenario_data):
         # Re-raise the exception to ensure the transaction rollback occurs
         raise
 
-def insert_price_scenario_calculated_fields(cursor, price_scenario_id, calculated_fields_data):
-    """Inserts data into dbo.LoanPASS_Price_Scenario_Calculated_Fields."""
+def insert_price_scenario_calculated_fields(cursor, price_scenario_id, calculated_fields_data, run_id):
+    """
+    Inserts data into dbo.LoanPASS_Price_Scenario_Calculated_Fields.
+    Includes Run_Id.
+    """
     if not isinstance(price_scenario_id, int):
         print(f"  Skipping insertion of Price Scenario Calculated Fields for Scenario Id: {price_scenario_id}. "
               "Parent scenario did not generate a valid integer ID.")
@@ -517,8 +349,8 @@ def insert_price_scenario_calculated_fields(cursor, price_scenario_id, calculate
         Name, CreatedDate, LastModifiedDate, IsDeleted,
         LoanPASS_Price_Scenario_Id, Field_Id__c, Value_Type__c,
         Enum_Type_Id__c, Variant_Id__c, Number_Value__c,
-        String_Value__c, Duration_Count__c, Duration_Unit__c
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        String_Value__c, Duration_Count__c, Duration_Unit__c, Run_Id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """
     current_time = datetime.now(timezone.utc)
     for field in calculated_fields_data:
@@ -542,18 +374,22 @@ def insert_price_scenario_calculated_fields(cursor, price_scenario_id, calculate
                 extracted_values['Number_Value__c'],
                 extracted_values['String_Value__c'],
                 extracted_values['Duration_Count__c'],
-                extracted_values['Duration_Unit__c']
+                extracted_values['Duration_Unit__c'],
+                str(run_id) # Run_Id
             )
             print(f"  Inserted Price Scenario Calculated Field: {name}")
         except pyodbc.Error as ex:
             print(f"  Error inserting Price Scenario Calculated Field '{name}': {ex}")
             # Re-print SQL and parameters for debugging on error
             print(f"  Failed SQL: {sql}")
-            print(f"  Failed Parameters: {(name, current_time, current_time, False, price_scenario_id, field_id, extracted_values['Value_Type__c'], extracted_values['Enum_Type_Id__c'], extracted_values['Variant_Id__c'], extracted_values['Number_Value__c'], extracted_values['String_Value__c'], extracted_values['Duration_Count__c'], extracted_values['Duration_Unit__c'])}")
+            print(f"  Failed Parameters: {(name, current_time, current_time, False, price_scenario_id, field_id, extracted_values['Value_Type__c'], extracted_values['Enum_Type_Id__c'], extracted_values['Variant_Id__c'], extracted_values['Number_Value__c'], extracted_values['String_Value__c'], extracted_values['Duration_Count__c'], extracted_values['Duration_Unit__c'], str(run_id))}")
             raise
 
-def insert_price_scenario_errors(cursor, price_scenario_id, errors_data):
-    """Inserts data into dbo.LoanPASS_Price_Scenario_Errors."""
+def insert_price_scenario_errors(cursor, price_scenario_id, errors_data, run_id):
+    """
+    Inserts data into dbo.LoanPASS_Price_Scenario_Errors.
+    Includes Run_Id.
+    """
     if not isinstance(price_scenario_id, int):
         print(f"  Skipping insertion of Price Scenario Errors for Scenario Id: {price_scenario_id}. "
               "Parent scenario did not generate a valid integer ID.")
@@ -564,8 +400,8 @@ def insert_price_scenario_errors(cursor, price_scenario_id, errors_data):
     INSERT INTO dbo.LoanPASS_Price_Scenario_Errors (
         Name, CreatedDate, LastModifiedDate, IsDeleted,
         LoanPASS_Price_Scenario_Id, Source_Type__c, Source_Rule_Id__c,
-        Error_Type__c, Error_Field_Id__c, Message__c
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        Error_Type__c, Error_Field_Id__c, Message__c, Run_Id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """
     current_time = datetime.now(timezone.utc)
     for error in errors_data:
@@ -590,18 +426,22 @@ def insert_price_scenario_errors(cursor, price_scenario_id, errors_data):
                 source_rule_id,
                 error_type,
                 error_field_id,
-                message
+                message,
+                str(run_id) # Run_Id
             )
             print(f"    Inserted Price Scenario Error: {name} (Field: {error_field_id})")
         except pyodbc.Error as ex:
             print(f"    Error inserting Price Scenario Error '{name}': {ex}")
             # Re-print SQL and parameters for debugging on error
             print(f"    Failed SQL: {sql}")
-            print(f"    Failed Parameters: {(name, current_time, current_time, False, price_scenario_id, source_type, source_rule_id, error_type, error_field_id, message)}")
+            print(f"    Failed Parameters: {(name, current_time, current_time, False, price_scenario_id, source_type, source_rule_id, error_type, error_field_id, message, str(run_id))}")
             raise
 
-def insert_price_scenario_rejections(cursor, price_scenario_id, rejections_data):
-    """Inserts data into dbo.LoanPASS_Price_Scenario_Rejections."""
+def insert_price_scenario_rejections(cursor, price_scenario_id, rejections_data, run_id):
+    """
+    Inserts data into dbo.LoanPASS_Price_Scenario_Rejections.
+    Includes Run_Id.
+    """
     if not isinstance(price_scenario_id, int):
         print(f"  Skipping insertion of Price Scenario Rejections for Scenario Id: {price_scenario_id}. "
               "Parent scenario did not generate a valid integer ID.")
@@ -611,8 +451,8 @@ def insert_price_scenario_rejections(cursor, price_scenario_id, rejections_data)
     sql = """
     INSERT INTO dbo.LoanPASS_Price_Scenario_Rejections (
         Name, CreatedDate, LastModifiedDate, IsDeleted,
-        LoanPASS_Price_Scenario_Id, Source_Type__c, Source_Rule_Id__c, Message__c
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        LoanPASS_Price_Scenario_Id, Source_Type__c, Source_Rule_Id__c, Message__c, Run_Id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     """
     current_time = datetime.now(timezone.utc)
     for rejection in rejections_data:
@@ -631,18 +471,22 @@ def insert_price_scenario_rejections(cursor, price_scenario_id, rejections_data)
                 price_scenario_id, # This expects an integer ID
                 source_type,
                 source_rule_id,
-                message
+                message,
+                str(run_id) # Run_Id
             )
             print(f"    Inserted Price Scenario Rejection: {name}")
         except pyodbc.Error as ex:
             print(f"    Error inserting Price Scenario Rejection '{name}': {ex}")
             # Re-print SQL and parameters for debugging on error
             print(f"    Failed SQL: {sql}")
-            print(f"    Failed Parameters: {(name, current_time, current_time, False, price_scenario_id, source_type, source_rule_id, message)}")
+            print(f"    Failed Parameters: {(name, current_time, current_time, False, price_scenario_id, source_type, source_rule_id, message, str(run_id))}")
             raise
 
-def insert_price_scenario_review_requirements(cursor, price_scenario_id, review_requirements_data):
-    """Inserts data into dbo.LoanPASS_Price_Scenario_Review_Requirements."""
+def insert_price_scenario_review_requirements(cursor, price_scenario_id, review_requirements_data, run_id):
+    """
+    Inserts data into dbo.LoanPASS_Price_Scenario_Review_Requirements.
+    Includes Run_Id.
+    """
     if not review_requirements_data:
         print(f"  No Review Requirements to insert for Scenario Id: {price_scenario_id}")
         return
@@ -655,8 +499,8 @@ def insert_price_scenario_review_requirements(cursor, price_scenario_id, review_
     sql = """
     INSERT INTO dbo.LoanPASS_Price_Scenario_Review_Requirements (
         Name, CreatedDate, LastModifiedDate, IsDeleted,
-        LoanPASS_Price_Scenario_Id, Description__c, Requirement_Type__c, Source_Details__c
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        LoanPASS_Price_Scenario_Id, Description__c, Requirement_Type__c, Source_Details__c, Run_Id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     """
     current_time = datetime.now(timezone.utc)
     for req in review_requirements_data:
@@ -677,18 +521,22 @@ def insert_price_scenario_review_requirements(cursor, price_scenario_id, review_
                 price_scenario_id, # This expects an integer ID
                 description,
                 req_type,
-                source_details
+                source_details,
+                str(run_id) # Run_Id
             )
             print(f"    Inserted Price Scenario Review Requirement: {name}")
         except pyodbc.Error as ex:
             print(f"    Error inserting Price Scenario Review Requirement '{name}': {ex}")
             # Re-print SQL and parameters for debugging on error
             print(f"    Failed SQL: {sql}")
-            print(f"    Failed Parameters: {(name, current_time, current_time, False, price_scenario_id, description, req_type, source_details)}")
+            print(f"    Failed Parameters: {(name, current_time, current_time, False, price_scenario_id, description, req_type, source_details, str(run_id))}")
             raise
 
-def insert_price_scenario_adjustments(cursor, price_scenario_id, adjustments_data, category):
-    """Inserts data into dbo.LoanPASS_Price_Scenario_Adjustments."""
+def insert_price_scenario_adjustments(cursor, price_scenario_id, adjustments_data, category, run_id):
+    """
+    Inserts data into dbo.LoanPASS_Price_Scenario_Adjustments.
+    Includes Run_Id.
+    """
     if not adjustments_data:
         print(f"  No {category} Adjustments to insert for Scenario Id: {price_scenario_id}")
         return
@@ -703,8 +551,8 @@ def insert_price_scenario_adjustments(cursor, price_scenario_id, adjustments_dat
         Name, CreatedDate, LastModifiedDate, IsDeleted,
         LoanPASS_Price_Scenario_Id, Adjustment_Category__c, Description__c,
         Adjustment_Value_Numeric__c, Adjustment_Value_Text__c,
-        Source_Rule_Id__c, Source_Field_Id__c, Notes__c
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        Source_Rule_Id__c, Source_Field_Id__c, Notes__c, Run_Id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """
     current_time = datetime.now(timezone.utc)
     for adj in adjustments_data:
@@ -732,18 +580,22 @@ def insert_price_scenario_adjustments(cursor, price_scenario_id, adjustments_dat
                 adj_value_text,
                 source_rule_id,
                 source_field_id,
-                notes
+                notes,
+                str(run_id) # Run_Id
             )
             print(f"    Inserted Price Scenario Adjustment ({category}): {name}")
         except pyodbc.Error as ex:
             print(f"    Error inserting Price Scenario Adjustment ({category}) '{name}': {ex}")
             # Re-print SQL and parameters for debugging on error
             print(f"    Failed SQL: {sql}")
-            print(f"    Failed Parameters: {(name, current_time, current_time, False, price_scenario_id, category, description, adj_value_numeric, adj_value_text, source_rule_id, source_field_id, notes)}")
+            print(f"    Failed Parameters: {(name, current_time, current_time, False, price_scenario_id, category, description, adj_value_numeric, adj_value_text, source_rule_id, source_field_id, notes, str(run_id))}")
             raise
 
-def insert_price_scenario_stipulations(cursor, price_scenario_id, stipulations_data):
-    """Inserts data into dbo.LoanPASS_Price_Scenario_Stipulations."""
+def insert_price_scenario_stipulations(cursor, price_scenario_id, stipulations_data, run_id):
+    """
+    Inserts data into dbo.LoanPASS_Price_Scenario_Stipulations.
+    Includes Run_Id.
+    """
     if not stipulations_data:
         print(f"  No Stipulations to insert for Scenario Id: {price_scenario_id}")
         return
@@ -757,8 +609,8 @@ def insert_price_scenario_stipulations(cursor, price_scenario_id, stipulations_d
     INSERT INTO dbo.LoanPASS_Price_Scenario_Stipulations (
         Name, CreatedDate, LastModifiedDate, IsDeleted,
         LoanPASS_Price_Scenario_Id, Description__c, Stipulation_Code__c,
-        Source_Details__c, Is_Satisfied__c
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        Source_Details__c, Is_Satisfied__c, Run_Id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """
     current_time = datetime.now(timezone.utc)
     for stip in stipulations_data:
@@ -781,1421 +633,268 @@ def insert_price_scenario_stipulations(cursor, price_scenario_id, stipulations_d
                 description,
                 stip_code,
                 source_details,
-                is_satisfied
+                is_satisfied,
+                str(run_id) # Run_Id
             )
             print(f"    Inserted Price Scenario Stipulation: {name}")
         except pyodbc.Error as ex:
             print(f"    Error inserting Price Scenario Stipulation '{name}': {ex}")
             # Re-print SQL and parameters for debugging on error
             print(f"    Failed SQL: {sql}")
-            print(f"    Failed Parameters: {(name, current_time, current_time, False, price_scenario_id, description, stip_code, source_details, is_satisfied)}")
+            print(f"    Failed Parameters: {(name, current_time, current_time, False, price_scenario_id, description, stip_code, source_details, is_satisfied, str(run_id))}")
             raise
 
 
-def process_loanpass_json(json_data, conn_str):
+# --- 2. LoanPASS API Configuration ---
+LOANPASS_API_TOKEN = "hdzuN0bgsYcCdp4JM8HOFQ4mbJn8l6"
+
+# Endpoints
+LOANPASS_SUMMARY_API_ENDPOINT = "https://api.loanpass.io/v1/execute-summary"
+LOANPASS_PRODUCT_API_ENDPOINT = "https://api.loanpass.io/v1/execute-product"
+
+# --- 3. JSON Data Structures for API Calls ---
+# Template for the initial /execute-summary API call
+loanpass_summary_api_request_template = {
+    "currentTime": None, # This will be replaced dynamically
+    "pricingProfileId": "291",
+    "creditApplicationFields": [],
+    "publishedVersionRequest": {
+        "type": "current"
+    },
+    "pipelineRecordId": None,
+    "engine": "original",
+    "bypassWorstCase": False
+}
+
+# Template for the subsequent /execute-product API calls
+loanpass_product_api_request_template = {
+    "currentTime": None, # This will be replaced dynamically
+    "productId": None,   # This will be replaced dynamically for each product
+    "pricingProfileId": "291",
+    "creditApplicationFields": [],
+    "outputFieldsFilter": {
+        "type": "all"
+    },
+    "publishedVersionRequest": {
+        "type": "current"
+    },
+    "pipelineRecordId": None,
+    "engine": "original",
+    "bypassWorstCase": False
+}
+
+def call_loanpass_api(endpoint, json_data_for_api):
+    """
+    Generic function to call a LoanPASS API endpoint with the provided JSON data.
+    """
+    headers = {
+        "Authorization": f"Bearer {LOANPASS_API_TOKEN}",
+        "Content-Type": "application/json"
+    }
+
+    print(f"\nCalling LoanPASS API: {endpoint}")
+    print(f"Request Payload: {json.dumps(json_data_for_api, indent=2)}")
+    try:
+        response = requests.post(endpoint, headers=headers, json=json_data_for_api, timeout=60) # Increased timeout
+        response.raise_for_status() # Raise an HTTPError for bad responses (4xx or 5xx)
+
+        print(f"LoanPASS API call successful. Status Code: {response.status_code}")
+        api_response_json = response.json()
+        print("API Response JSON received.")
+        print(f"API Response: {json.dumps(api_response_json, indent=2)}")
+        return api_response_json # Return the JSON response from the API
+    except requests.exceptions.HTTPError as http_err:
+        print(f"HTTP error occurred during API call to {endpoint}: {http_err}")
+        print(f"Response content: {response.text}")
+        raise # Re-raise the exception to be caught by the main processing logic
+    except requests.exceptions.ConnectionError as conn_err:
+        print(f"Connection error occurred during API call to {endpoint}: {conn_err}")
+        raise
+    except requests.exceptions.Timeout as timeout_err:
+        print(f"Timeout occurred during API call to {endpoint}: {timeout_err}")
+        raise
+    except requests.exceptions.RequestException as req_err:
+        print(f"An unexpected error occurred during API call to {endpoint}: {req_err}")
+        raise
+    except json.JSONDecodeError as json_err:
+        print(f"Error decoding JSON response from API {endpoint}: {json_err}")
+        print(f"Raw response content: {response.text}")
+        raise
+
+def process_loanpass_json(cursor, json_data, run_id):
     """
     Processes the entire LoanPASS JSON structure and inserts data into the database.
-    Accepts the database connection string as an argument.
+    Accepts the database cursor and run_id as arguments.
     """
-    conn = None
     try:
-        conn = get_db_connection(conn_str) # Pass the connection string here
-        cursor = conn.cursor()
-
         # 1. Insert LoanPASS_Product_Offerings (top-level JSON is the product offering)
-        product_offering_id = insert_product_offering(cursor, json_data)
+        product_offering_id = insert_product_offering(cursor, json_data, run_id)
 
         # 2. Insert LoanPASS_Product_Calculated_Fields (from productFields array)
         if 'productFields' in json_data and json_data['productFields']:
-            insert_product_calculated_fields(cursor, product_offering_id, json_data['productFields'], is_calculated=False)
+            insert_product_calculated_fields(cursor, product_offering_id, json_data['productFields'], run_id, is_calculated=False)
 
         # 3. Insert LoanPASS_Product_Calculated_Fields (from calculatedFields array)
         if 'calculatedFields' in json_data and json_data['calculatedFields']:
-            insert_product_calculated_fields(cursor, product_offering_id, json_data['calculatedFields'], is_calculated=True)
+            insert_product_calculated_fields(cursor, product_offering_id, json_data['calculatedFields'], run_id, is_calculated=True)
 
         # 4. Insert LoanPASS_Price_Scenarios and their nested data
         price_scenarios_data = json_data.get('status', {}).get('priceScenarios', [])
         if price_scenarios_data:
             for scenario in price_scenarios_data:
                 # The insert_price_scenario function will now return an integer or a random integer.
-                price_scenario_id = insert_price_scenario(cursor, product_offering_id, scenario)
+                price_scenario_id = insert_price_scenario(cursor, product_offering_id, scenario, run_id)
 
                 # Only proceed with child insertions if an integer ID was successfully obtained
                 if isinstance(price_scenario_id, int):
                     # Insert nested data for each price scenario
                     if 'calculatedFields' in scenario and scenario['calculatedFields']:
-                        insert_price_scenario_calculated_fields(cursor, price_scenario_id, scenario['calculatedFields'])
+                        insert_price_scenario_calculated_fields(cursor, price_scenario_id, scenario['calculatedFields'], run_id)
                     
                     scenario_status = scenario.get('status', {})
                     if 'errors' in scenario_status and scenario_status['errors']:
-                        insert_price_scenario_errors(cursor, price_scenario_id, scenario_status['errors'])
+                        insert_price_scenario_errors(cursor, price_scenario_id, scenario_status['errors'], run_id)
                     if 'rejections' in scenario_status and scenario_status['rejections']:
-                        insert_price_scenario_rejections(cursor, price_scenario_id, scenario_status['rejections'])
+                        insert_price_scenario_rejections(cursor, price_scenario_id, scenario_status['rejections'], run_id)
                     if 'reviewRequirements' in scenario_status and scenario_status['reviewRequirements']:
-                        insert_price_scenario_review_requirements(cursor, price_scenario_id, scenario_status['reviewRequirements'])
+                        insert_price_scenario_review_requirements(cursor, price_scenario_id, scenario_status['reviewRequirements'], run_id)
                     
                     # Handle various adjustment types
                     if 'priceAdjustments' in scenario_status and scenario_status['priceAdjustments']:
-                        insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['priceAdjustments'], 'PriceAdjustment')
+                        insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['priceAdjustments'], 'PriceAdjustment', run_id)
                     if 'marginAdjustments' in scenario_status and scenario_status['marginAdjustments']:
-                        insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['marginAdjustments'], 'MarginAdjustment')
+                        insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['marginAdjustments'], 'MarginAdjustment', run_id)
                     if 'rateAdjustments' in scenario_status and scenario_status['rateAdjustments']:
-                        insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['rateAdjustments'], 'RateAdjustment')
+                        insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['rateAdjustments'], 'RateAdjustment', run_id)
                     if 'finalPriceAdjustments' in scenario_status and scenario_status['finalPriceAdjustments']:
-                        insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['finalPriceAdjustments'], 'FinalPriceAdjustment')
+                        insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['finalPriceAdjustments'], 'FinalPriceAdjustment', run_id)
                     if 'finalMarginAdjustments' in scenario_status and scenario_status['finalMarginAdjustments']:
-                        insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['finalMarginAdjustments'], 'FinalMarginAdjustment')
+                        insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['finalMarginAdjustments'], 'FinalMarginAdjustment', run_id)
                     if 'finalRateAdjustments' in scenario_status and scenario_status['finalRateAdjustments']:
-                        insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['finalRateAdjustments'], 'FinalRateAdjustment')
+                        insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['finalRateAdjustments'], 'FinalRateAdjustment', run_id)
                     
                     if 'stipulations' in scenario_status and scenario_status['stipulations']:
-                        insert_price_scenario_stipulations(cursor, price_scenario_id, scenario_status['stipulations'])
+                        insert_price_scenario_stipulations(cursor, price_scenario_id, scenario_status['stipulations'], run_id)
                 else:
                     # This block will be hit if a random integer was generated due to a failed parent insert.
                     print(f"  Skipping nested insertions for scenario '{scenario.get('id')}' because no valid integer ID was retrieved from the database.")
-
-
-        conn.commit() # Commit the transaction if all insertions are successful
-        print("All data successfully inserted and committed.")
+        print("All data successfully inserted for this product.")
 
     except pyodbc.Error as ex:
-        if conn:
-            conn.rollback() # Rollback on any error
-            print("Transaction rolled back due to a database error.")
-        print(f"A database error occurred during processing: {ex}")
+        print(f"A database error occurred during processing JSON data: {ex}")
+        raise # Re-raise to allow outer function to handle rollback
     except Exception as e:
+        print(f"An unexpected error occurred during processing JSON data: {e}")
+        raise # Re-raise to allow outer function to handle rollback
+
+
+def process_loan_pass_data(db_connection_string, initial_summary_request_data=None):
+    """
+    Orchestrates the process:
+    1. Calls the /execute-summary API to get a list of products.
+    2. For each product, calls the /execute-product API to get detailed data.
+    3. Inserts/updates the detailed product data into the database tables.
+    Handles transactions for atomicity.
+    """
+    conn = None
+    # Generate a unique Run_Id for this execution
+    current_run_id = uuid.uuid4()
+    print(f"Starting data processing with Run ID: {current_run_id}")
+
+    try:
+        # --- 1. Prepare and Call /execute-summary API ---
+        if initial_summary_request_data:
+            summary_request_data = initial_summary_request_data
+            # Ensure currentTime is updated even if provided via file
+            summary_request_data["currentTime"] = datetime.now().astimezone().isoformat()
+        else:
+            summary_request_data = loanpass_summary_api_request_template.copy()
+            summary_request_data["currentTime"] = datetime.now().astimezone().isoformat()
+
+        summary_response = call_loanpass_api(LOANPASS_SUMMARY_API_ENDPOINT, summary_request_data)
+
+        if not summary_response or "products" not in summary_response:
+            print("Summary API response was empty or missing 'products' key. Aborting database operations.")
+            return
+
+        products_list = summary_response["products"]
+        if not products_list:
+            print("No products found in the summary API response. Aborting database operations.")
+            return
+
+        print(f"Found {len(products_list)} products from summary API. Proceeding to fetch details and insert.")
+
+        # Establish database connection once for all product insertions
+        conn = get_db_connection(db_connection_string)
+        cursor = conn.cursor()
+
+        # --- 2. Iterate through products and call /execute-product API for each ---
+        for product_summary in products_list:
+            product_id_to_fetch = product_summary.get("productId")
+            if not product_id_to_fetch:
+                print(f"Skipping product due to missing 'productId' in summary: {product_summary}")
+                continue
+
+            print(f"\n--- Processing Product ID: {product_id_to_fetch} ---")
+
+            # Prepare payload for /execute-product API
+            product_detail_request_data = loanpass_product_api_request_template.copy()
+            product_detail_request_data["currentTime"] = datetime.now().astimezone().isoformat()
+            product_detail_request_data["productId"] = product_id_to_fetch
+
+            try:
+                # Call /execute-product API for detailed product data
+                product_details_response = call_loanpass_api(LOANPASS_PRODUCT_API_ENDPOINT, product_detail_request_data)
+
+                # IMPORTANT ASSUMPTION:
+                # We assume 'product_details_response' has the structure needed for DB insertion.
+                # If the actual API response structure is different, you will need to
+                # transform 'product_details_response' into the expected database-friendly format here.
+                data_for_db_insertion = product_details_response
+
+                if not data_for_db_insertion:
+                    print(f"No detailed data received for Product ID {product_id_to_fetch}. Skipping database insertion for this product.")
+                    continue
+
+                # Start a transaction for each product's full data insertion
+                # (Alternatively, you could have one large transaction for all products,
+                # but per-product transactions are safer if one product fails)
+                conn.autocommit = False # Ensure transaction is active
+
+                # Call the new process_loanpass_json function to handle insertion
+                process_loanpass_json(cursor, data_for_db_insertion, current_run_id)
+                
+                # Commit the transaction for this product if all operations are successful
+                conn.commit()
+                print(f"Successfully inserted/updated data for Product ID: {product_id_to_fetch}")
+
+            except (requests.exceptions.RequestException, pyodbc.Error, json.JSONDecodeError) as e:
+                print(f"Error processing Product ID {product_id_to_fetch}: {e}")
+                if conn:
+                    conn.rollback() # Rollback current product's transaction on error
+                    print(f"Transaction rolled back for Product ID: {product_id_to_fetch}.")
+                # Continue to the next product even if one fails
+                continue
+
+    except requests.exceptions.RequestException as e:
+        print(f"\nInitial API Call Error: {e}")
+        # No database rollback needed here as no transaction was started or committed
+    except pyodbc.Error as ex:
+        sqlstate = ex.args[0]
+        print(f"\nDatabase Error (during initial setup or outer loop): {sqlstate}")
+        print(f"Error details: {ex.args[1]}")
         if conn:
-            conn.rollback()
-            print("Transaction rolled back due to an unexpected error.")
-        print(f"An unexpected error occurred: {e}")
-    # finally:
-    #     if conn:
-    #         conn.close()
-    #         print("Database connection closed.")
-
-# --- Sample JSON Data (Provided by user) ---
-sample_json_data = {
-  "productId": "76059",
-  "productName": "DSCR 40 Year Fixed IO",
-  "productCode": "LSFDSCRF40IO",
-  "investorName": "Series 2",
-  "investorCode": "LSFLENDZ",
-  "isPricingEnabled": True,
-  "productFields": [
-    {
-      "fieldId": "field@product-channel",
-      "value": {
-        "type": "enum",
-        "enumTypeId": "channel",
-        "variantId": "correspondent"
-      }
-    },
-    {
-      "fieldId": "field@mortgage-type",
-      "value": {
-        "type": "enum",
-        "enumTypeId": "mortgage-type",
-        "variantId": "non-qm"
-      }
-    },
-    {
-      "fieldId": "field@loan-term-type",
-      "value": {
-        "type": "enum",
-        "enumTypeId": "loan-term-type",
-        "variantId": "preset"
-      }
-    },
-    {
-      "fieldId": "field@preset-loan-term",
-      "value": {
-        "type": "duration",
-        "count": "480",
-        "unit": "months"
-      }
-    },
-    {
-      "fieldId": "field@preset-loan-maturity",
-      "value": {
-        "type": "duration",
-        "count": "480",
-        "unit": "months"
-      }
-    },
-    {
-      "fieldId": "field@payment-interval",
-      "value": {
-        "type": "duration",
-        "count": "1",
-        "unit": "months"
-      }
-    },
-    {
-      "fieldId": "field@amortization-type",
-      "value": {
-        "type": "enum",
-        "enumTypeId": "amortization-type",
-        "variantId": "fixed"
-      }
-    },
-    {
-      "fieldId": "field@interest-only-period",
-      "value": {
-        "type": "enum",
-        "enumTypeId": "interest-only-period",
-        "variantId": "yes"
-      }
-    },
-    {
-      "fieldId": "field@i-o-term",
-      "value": {
-        "type": "duration",
-        "count": "120",
-        "unit": "months"
-      }
-    },
-    {
-      "fieldId": "field@lien-priority",
-      "value": {
-        "type": "enum",
-        "enumTypeId": "lien-priority",
-        "variantId": "first"
-      }
-    },
-    {
-      "fieldId": "field@max-price-limit",
-      "value": {
-        "type": "enum",
-        "enumTypeId": "yes-no",
-        "variantId": "no"
-      }
-    }
-  ],
-  "calculatedFields": [
-    {
-      "fieldId": "calc@total-loan-balance",
-      "value": None
-    },
-    {
-      "fieldId": "calc@cash-out-amount",
-      "value": {
-        "type": "number",
-        "value": "0"
-      }
-    },
-    {
-      "fieldId": "calc-field@sgcp-prime-connect-co-refi-matrix-output",
-      "value": None
-    },
-    {
-      "fieldId": "calc@loan-term-duration-calc",
-      "value": {
-        "type": "duration",
-        "count": "360",
-        "unit": "months"
-      }
-    },
-    {
-      "fieldId": "calc-field@lsf-all-investment-state-eligibility",
-      "value": {
-        "type": "enum",
-        "enumTypeId": "yes-no",
-        "variantId": "yes"
-      }
-    },
-    {
-      "fieldId": "calc@number-of-units-enum-to-int-conversion",
-      "value": {
-        "type": "number",
-        "value": "1"
-      }
-    },
-    {
-      "fieldId": "calc-field@lsf-all-owner-occupied-state-eligibility",
-      "value": {
-        "type": "enum",
-        "enumTypeId": "yes-no",
-        "variantId": "yes"
-      }
-    },
-    {
-      "fieldId": "calc-field@lendz-lsf-dscr-non-warrantable-condo-llpa-output",
-      "value": {
-        "type": "number",
-        "value": "-0.375"
-      }
-    },
-    {
-      "fieldId": "calc-field@lsm-ces-standard-full-doc-max-cltv-rt-refi",
-      "value": None
-    },
-    {
-      "fieldId": "calc-field@obfc-state-tier",
-      "value": {
-        "type": "string",
-        "value": "Tier 1"
-      }
-    },
-    {
-      "fieldId": "calc-field@lsm-ces-standard-full-doc-max-cltv-purchase",
-      "value": None
-    },
-    {
-      "fieldId": "calc@lendz-lsf-consumer-non-warrantable-condo-llpa",
-      "value": {
-        "type": "number",
-        "value": "-0.375"
-      }
-    },
-    {
-      "fieldId": "calc@combined-loan-amount",
-      "value": None
-    },
-    {
-      "fieldId": "calc@lsm-ces-alt-doc-final-max-cltv",
-      "value": None
-    },
-    {
-      "fieldId": "calc@financed-mi",
-      "value": {
-        "type": "number",
-        "value": "0"
-      }
-    },
-    {
-      "fieldId": "calc@loan-term",
-      "value": {
-        "type": "duration",
-        "count": "360",
-        "unit": "months"
-      }
-    },
-    {
-      "fieldId": "calc-field@lsm-ces-dscr-max-cltv-co-refi",
-      "value": None
-    },
-    {
-      "fieldId": "calc@interest-only-allowed",
-      "value": {
-        "type": "enum",
-        "enumTypeId": "interest-only-period",
-        "variantId": "no"
-      }
-    },
-    {
-      "fieldId": "calc-field@lsm-ces-standard-full-doc-max-cltv-co-refi",
-      "value": None
-    },
-    {
-      "fieldId": "calc@months-since-chapter-11-bankruptcy",
-      "value": None
-    },
-    {
-      "fieldId": "calc@months-since-foreclosure",
-      "value": None
-    },
-    {
-      "fieldId": "calc@lendz-lsf-dscr-non-warrantable-condo-llpa",
-      "value": {
-        "type": "number",
-        "value": "-0.625"
-      }
-    },
-    {
-      "fieldId": "calc@months-since-short-sale",
-      "value": None
-    },
-    {
-      "fieldId": "calc@channel-allowed",
-      "value": {
-        "type": "enum",
-        "enumTypeId": "yes-no",
-        "variantId": "yes"
-      }
-    },
-    {
-      "fieldId": "calc@ltv",
-      "value": {
-        "type": "number",
-        "value": "55.00"
-      }
-    },
-    {
-      "fieldId": "calc@months-since-deed-in-lieu",
-      "value": None
-    },
-    {
-      "fieldId": "calc@second-lien-cltv",
-      "value": {
-        "type": "number",
-        "value": "0"
-      }
-    },
-    {
-      "fieldId": "calc-field@lsm-ces-alt-doc-max-cltv-purchase",
-      "value": None
-    },
-    {
-      "fieldId": "calc-field@lendz-lsf-consumer-non-warrantable-condo-llpa-output",
-      "value": {
-        "type": "number",
-        "value": "-0.125"
-      }
-    },
-    {
-      "fieldId": "calc-field@lendz-lsf-dscr-condo-llpa-output",
-      "value": {
-        "type": "number",
-        "value": "-0.250"
-      }
-    },
-    {
-      "fieldId": "calc@total-loan-amount",
-      "value": {
-        "type": "number",
-        "value": "550000.00"
-      }
-    },
-    {
-      "fieldId": "calc-field@lsm-ces-alt-doc-max-cltv-co-refi",
-      "value": None
-    },
-    {
-      "fieldId": "calc-field@sgcp-prime-connect-rt-refi-matrix-output",
-      "value": None
-    },
-    {
-      "fieldId": "calc-field@lsm-ces-dscr-max-cltv-purchase",
-      "value": None
-    },
-    {
-      "fieldId": "calc@residual-income",
-      "value": {
-        "type": "number",
-        "value": "1000000.00"
-      }
-    },
-    {
-      "fieldId": "calc-field@state-business-only",
-      "value": {
-        "type": "string",
-        "value": "No"
-      }
-    },
-    {
-      "fieldId": "calc-field@sgcp-prime-connect-purchase-matrix-output",
-      "value": None
-    },
-    {
-      "fieldId": "calc@lsm-ces-short-term-rental-leverage-reduction",
-      "value": {
-        "type": "number",
-        "value": "0"
-      }
-    },
-    {
-      "fieldId": "calc-field@lsm-ces-select-full-doc-max-cltv-co-refi",
-      "value": None
-    },
-    {
-      "fieldId": "calc@lsm-ces-total-leverage-reduction",
-      "value": {
-        "type": "number",
-        "value": "0"
-      }
-    },
-    {
-      "fieldId": "calc@mortgage-type-allowed",
-      "value": {
-        "type": "enum",
-        "enumTypeId": "yes-no",
-        "variantId": "yes"
-      }
-    },
-    {
-      "fieldId": "calc@cltv",
-      "value": {
-        "type": "number",
-        "value": "55.00"
-      }
-    },
-    {
-      "fieldId": "calc@months-since-chapter-7-bankruptcy",
-      "value": None
-    },
-    {
-      "fieldId": "calc@lsm-ces-doc-type-leverage-reduction",
-      "value": {
-        "type": "number",
-        "value": "0"
-      }
-    },
-    {
-      "fieldId": "calc@lien-position-allowed",
-      "value": {
-        "type": "enum",
-        "enumTypeId": "yes-no",
-        "variantId": "yes"
-      }
-    },
-    {
-      "fieldId": "calc-field@lsm-ces-dscr-max-cltv-rt-refi",
-      "value": None
-    },
-    {
-      "fieldId": "calc@hcltv",
-      "value": {
-        "type": "number",
-        "value": "55.00"
-      }
-    },
-    {
-      "fieldId": "calc-field@lendz-lsf-consumer-condo-llpa-output",
-      "value": {
-        "type": "number",
-        "value": "-0.250"
-      }
-    },
-    {
-      "fieldId": "calc-field@lsm-ces-alt-doc-max-cltv-rt-refi",
-      "value": None
-    },
-    {
-      "fieldId": "calc-field@state-license",
-      "value": {
-        "type": "string",
-        "value": "Yes"
-      }
-    },
-    {
-      "fieldId": "calc@lsm-ces-select-full-doc-final-max-cltv",
-      "value": {
-        "type": "number",
-        "value": "0"
-      }
-    },
-    {
-      "fieldId": "calc@loan-term-allowed",
-      "value": {
-        "type": "enum",
-        "enumTypeId": "yes-no",
-        "variantId": "no"
-      }
-    },
-    {
-      "fieldId": "calc@lsm-ces-standard-full-doc-final-max-cltv",
-      "value": None
-    },
-    {
-      "fieldId": "calc@mi-and-funding-fee-financed-amount",
-      "value": {
-        "type": "number",
-        "value": "0"
-      }
-    },
-    {
-      "fieldId": "calc@lsm-ces-declining-market-leverage-reduction",
-      "value": {
-        "type": "number",
-        "value": "0"
-      }
-    },
-    {
-      "fieldId": "calc@total-lien-balance",
-      "value": None
-    },
-    {
-      "fieldId": "calc@lsm-ces-dscr-final-max-cltv",
-      "value": None
-    },
-    {
-      "fieldId": "calc@months-since-forbearance",
-      "value": None
-    },
-    {
-      "fieldId": "calc-field@state-reject-reason",
-      "value": {
-        "type": "string",
-        "value": "N/N"
-      }
-    },
-    {
-      "fieldId": "calc@amortization-type-allowed",
-      "value": {
-        "type": "enum",
-        "enumTypeId": "yes-no",
-        "variantId": "yes"
-      }
-    },
-    {
-      "fieldId": "calc@vista-point-default-credit-score",
-      "value": None
-    },
-    {
-      "fieldId": "calc@months-since-chapter-13-bankruptcy",
-      "value": None
-    }
-  ],
-  "status": {
-    "type": "ok",
-    "rateSheetEffectiveTimestamp": "2025-05-27T19:33:36.307949Z",
-    "priceScenarios": [
-      {
-        "id": "d72eab949f1ef6ef24e944c5524e90e8",
-        "priceScenarioFields": [
-          {
-            "fieldId": "base-interest-rate",
-            "value": {
-              "type": "number",
-              "value": "5.5"
-            }
-          },
-          {
-            "fieldId": "rate-lock-period",
-            "value": {
-              "type": "duration",
-              "count": "30",
-              "unit": "days"
-            }
-          },
-          {
-            "fieldId": "base-price",
-            "value": {
-              "type": "number",
-              "value": "89.19901428"
-            }
-          }
-        ],
-        "calculatedFields": [
-          {
-            "fieldId": "calc@initial-mtg-payment",
-            "value": {
-              "type": "number",
-              "value": "2520.83"
-            }
-          },
-          {
-            "fieldId": "calc@start-price",
-            "value": {
-              "type": "number",
-              "value": "89.199015"
-            }
-          },
-          {
-            "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
-            "value": None
-          },
-          {
-            "fieldId": "calc@adjusted-interest-rate",
-            "value": {
-              "type": "number",
-              "value": "5.5"
-            }
-          },
-          {
-            "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
-            "value": None
-          },
-          {
-            "fieldId": "calc@est-payment",
-            "value": {
-              "type": "number",
-              "value": "2520.83"
-            }
-          },
-          {
-            "fieldId": "calc@mtg-payment",
-            "value": {
-              "type": "number",
-              "value": "2520.83"
-            }
-          },
-          {
-            "fieldId": "calc@intermediate-rate",
-            "value": {
-              "type": "number",
-              "value": "5.5"
-            }
-          },
-          {
-            "fieldId": "calc@eresi-dscr-total-leverage-reduction",
-            "value": {
-              "type": "number",
-              "value": "0"
-            }
-          },
-          {
-            "fieldId": "calc@eresi-dscr-final-max-ltv",
-            "value": {
-              "type": "number",
-              "value": "75"
-            }
-          },
-          {
-            "fieldId": "calc@eresi-dscr-ltv-calc-2",
-            "value": {
-              "type": "number",
-              "value": "999"
-            }
-          },
-          {
-            "fieldId": "calc@arm-fully-indexed-rate",
-            "value": {
-              "type": "number",
-              "value": "0"
-            }
-          },
-          {
-            "fieldId": "calc@adjusted-rate-lock-period",
-            "value": {
-              "type": "duration",
-              "count": "30",
-              "unit": "days"
-            }
-          },
-          {
-            "fieldId": "calc@eresi-dscr-initial-max-ltv",
-            "value": {
-              "type": "number",
-              "value": "75"
-            }
-          },
-          {
-            "fieldId": "calc@initial-io-payment",
-            "value": {
-              "type": "number",
-              "value": "2520.83"
-            }
-          },
-          {
-            "fieldId": "calc@final-dscr",
-            "value": {
-              "type": "number",
-              "value": "0"
-            }
-          },
-          {
-            "fieldId": "calc@io-payment",
-            "value": {
-              "type": "number",
-              "value": "2520.83"
-            }
-          },
-          {
-            "fieldId": "calc@final-est-payment",
-            "value": {
-              "type": "number",
-              "value": "2520.83"
-            }
-          },
-          {
-            "fieldId": "calc@est-front-dti",
-            "value": {
-              "type": "number",
-              "value": "0.253"
-            }
-          },
-          {
-            "fieldId": "calc@final-est-dti",
-            "value": {
-              "type": "number",
-              "value": "0.253"
-            }
-          },
-          {
-            "fieldId": "calc@dscr",
-            "value": {
-              "type": "number",
-              "value": "0"
-            }
-          },
-          {
-            "fieldId": "calc@monthly-mi",
-            "value": {
-              "type": "number",
-              "value": "0"
-            }
-          },
-          {
-            "fieldId": "calc@dti-enum-to-int-conversion",
-            "value": None
-          },
-          {
-            "fieldId": "calc@eresi-dscr-ltv-calc-1",
-            "value": {
-              "type": "number",
-              "value": "75"
-            }
-          },
-          {
-            "fieldId": "calc@est-dti",
-            "value": {
-              "type": "number",
-              "value": "0.253"
-            }
-          },
-          {
-            "fieldId": "calc@initial-pi-payment",
-            "value": {
-              "type": "number",
-              "value": "3122.84"
-            }
-          },
-          {
-            "fieldId": "calc@final-est-front-dti",
-            "value": {
-              "type": "number",
-              "value": "0.253"
-            }
-          },
-          {
-            "fieldId": "calc@pi-payment",
-            "value": {
-              "type": "number",
-              "value": "3122.84"
-            }
-          },
-          {
-            "fieldId": "calc@1st-lien-est-payment",
-            "value": {
-              "type": "number",
-              "value": "2520.83"
-            }
-          },
-          {
-            "fieldId": "calc@final-interest-rate",
-            "value": {
-              "type": "number",
-              "value": "5.5"
-            }
-          },
-          {
-            "fieldId": "calc@start-interest-rate",
-            "value": {
-              "type": "number",
-              "value": "5.5"
-            }
-          }
-        ],
-        "status": {
-          "type": "rejected",
-          "rejections": [
-            {
-              "source": {
-                "type": "rule",
-                "ruleId": "39371"
-              },
-              "message": "Product is not eligible for the desired loan term."
-            },
-            {
-              "source": {
-                "type": "rule",
-                "ruleId": "124523"
-              },
-              "message": "Rate falls below floor allowed."
-            },
-            {
-              "source": {
-                "type": "rule",
-                "ruleId": "124525"
-              },
-              "message": "Investment occupancy only. (Your Occupancy: Primary Residence) DSCR documentation type required. (Your Documentation Type: Bank Statements)"
-            }
-          ],
-          "reviewRequirements": [],
-          "errors": [
-            {
-              "source": {
-                "type": "rule",
-                "ruleId": "146234"
-              },
-              "kind": {
-                "type": "blank-field",
-                "fieldId": "field@decision-credit-score"
-              }
-            }
-          ],
-          "priceAdjustments": [],
-          "marginAdjustments": [],
-          "rateAdjustments": [],
-          "finalPriceAdjustments": [],
-          "finalMarginAdjustments": [],
-          "finalRateAdjustments": [],
-          "stipulations": []
-        }
-      },
-      {
-        "id": "dcfdc9728be65ce326477abaf12a5fcf",
-        "priceScenarioFields": [
-          {
-            "fieldId": "base-interest-rate",
-            "value": {
-              "type": "number",
-              "value": "5.625"
-            }
-          },
-          {
-            "fieldId": "rate-lock-period",
-            "value": {
-              "type": "duration",
-              "count": "30",
-              "unit": "days"
-            }
-          },
-          {
-            "fieldId": "base-price",
-            "value": {
-              "type": "number",
-              "value": "90.26151428"
-            }
-          }
-        ],
-        "calculatedFields": [
-          {
-            "fieldId": "calc@initial-mtg-payment",
-            "value": {
-              "type": "number",
-              "value": "2578.13"
-            }
-          },
-          {
-            "fieldId": "calc@final-dscr",
-            "value": {
-              "type": "number",
-              "value": "0"
-            }
-          },
-          {
-            "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
-            "value": None
-          },
-          {
-            "fieldId": "calc@initial-pi-payment",
-            "value": {
-              "type": "number",
-              "value": "3166.12"
-            }
-          },
-          {
-            "fieldId": "calc@est-dti",
-            "value": {
-              "type": "number",
-              "value": "0.258"
-            }
-          },
-          {
-            "fieldId": "calc@eresi-dscr-final-max-ltv",
-            "value": {
-              "type": "number",
-              "value": "75"
-            }
-          },
-          {
-            "fieldId": "calc@dti-enum-to-int-conversion",
-            "value": None
-          },
-          {
-            "fieldId": "calc@start-interest-rate",
-            "value": {
-              "type": "number",
-              "value": "5.625"
-            }
-          },
-          {
-            "fieldId": "calc@pi-payment",
-            "value": {
-              "type": "number",
-              "value": "3166.12"
-            }
-          },
-          {
-            "fieldId": "calc@1st-lien-est-payment",
-            "value": {
-              "type": "number",
-              "value": "2578.13"
-            }
-          },
-          {
-            "fieldId": "calc@final-interest-rate",
-            "value": {
-              "type": "number",
-              "value": "5.625"
-            }
-          },
-          {
-            "fieldId": "calc@eresi-dscr-total-leverage-reduction",
-            "value": {
-              "type": "number",
-              "value": "0"
-            }
-          },
-          {
-            "fieldId": "calc@io-payment",
-            "value": {
-              "type": "number",
-              "value": "2578.13"
-            }
-          },
-          {
-            "fieldId": "calc@eresi-dscr-ltv-calc-2",
-            "value": {
-              "type": "number",
-              "value": "999"
-            }
-          },
-          {
-            "fieldId": "calc@adjusted-interest-rate",
-            "value": {
-              "type": "number",
-              "value": "5.625"
-            }
-          },
-          {
-            "fieldId": "calc@initial-io-payment",
-            "value": {
-              "type": "number",
-              "value": "2578.13"
-            }
-          },
-          {
-            "fieldId": "calc@dscr",
-            "value": {
-              "type": "number",
-              "value": "0"
-            }
-          },
-          {
-            "fieldId": "calc@eresi-dscr-initial-max-ltv",
-            "value": {
-              "type": "number",
-              "value": "75"
-            }
-          },
-          {
-            "fieldId": "calc@final-est-front-dti",
-            "value": {
-              "type": "number",
-              "value": "0.258"
-            }
-          },
-          {
-            "fieldId": "calc@mtg-payment",
-            "value": {
-              "type": "number",
-              "value": "2578.13"
-            }
-          },
-          {
-            "fieldId": "calc@final-est-dti",
-            "value": {
-              "type": "number",
-              "value": "0.258"
-            }
-          },
-          {
-            "fieldId": "calc@est-payment",
-            "value": {
-              "type": "number",
-              "value": "2578.13"
-            }
-          },
-          {
-            "fieldId": "calc@monthly-mi",
-            "value": {
-              "type": "number",
-              "value": "0"
-            }
-          },
-          {
-            "fieldId": "calc@final-est-payment",
-            "value": {
-              "type": "number",
-              "value": "2578.13"
-            }
-          },
-          {
-            "fieldId": "calc@intermediate-rate",
-            "value": {
-              "type": "number",
-              "value": "5.625"
-            }
-          },
-          {
-            "fieldId": "calc@arm-fully-indexed-rate",
-            "value": {
-              "type": "number",
-              "value": "0"
-            }
-          },
-          {
-            "fieldId": "calc@est-front-dti",
-            "value": {
-              "type": "number",
-              "value": "0.258"
-            }
-          },
-          {
-            "fieldId": "calc@adjusted-rate-lock-period",
-            "value": {
-              "type": "duration",
-              "count": "30",
-              "unit": "days"
-            }
-          },
-          {
-            "fieldId": "calc@eresi-dscr-ltv-calc-1",
-            "value": {
-              "type": "number",
-              "value": "75"
-            }
-          },
-          {
-            "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
-            "value": None
-          },
-          {
-            "fieldId": "calc@start-price",
-            "value": {
-              "type": "number",
-              "value": "90.261515"
-            }
-          }
-        ],
-        "status": {
-          "type": "rejected",
-          "rejections": [
-            {
-              "source": {
-                "type": "rule",
-                "ruleId": "39371"
-              },
-              "message": "Product is not eligible for the desired loan term."
-            },
-            {
-              "source": {
-                "type": "rule",
-                "ruleId": "124523"
-              },
-              "message": "Rate falls below floor allowed."
-            },
-            {
-              "source": {
-                "type": "rule",
-                "ruleId": "124525"
-              },
-              "message": "Investment occupancy only. (Your Occupancy: Primary Residence) DSCR documentation type required. (Your Documentation Type: Bank Statements)"
-            }
-          ],
-          "reviewRequirements": [],
-          "errors": [
-            {
-              "source": {
-                "type": "rule",
-                "ruleId": "146234"
-              },
-              "kind": {
-                "type": "blank-field",
-                "fieldId": "field@decision-credit-score"
-              }
-            }
-          ],
-          "priceAdjustments": [],
-          "marginAdjustments": [],
-          "rateAdjustments": [],
-          "finalPriceAdjustments": [],
-          "finalMarginAdjustments": [],
-          "finalRateAdjustments": [],
-          "stipulations": []
-        }
-      },
-      {
-        "id": "69ddf4aebb446bb41c3a6c0be4d37a5d",
-        "priceScenarioFields": [
-          {
-            "fieldId": "base-interest-rate",
-            "value": {
-              "type": "number",
-              "value": "5.75"
-            }
-          },
-          {
-            "fieldId": "rate-lock-period",
-            "value": {
-              "type": "duration",
-              "count": "30",
-              "unit": "days"
-            }
-          },
-          {
-            "fieldId": "base-price",
-            "value": {
-              "type": "number",
-              "value": "91.29276428"
-            }
-          }
-        ],
-        "calculatedFields": [
-          {
-            "fieldId": "calc@initial-io-payment",
-            "value": {
-              "type": "number",
-              "value": "2635.42"
-            }
-          },
-          {
-            "fieldId": "calc@eresi-dscr-initial-max-ltv",
-            "value": {
-              "type": "number",
-              "value": "75"
-            }
-          },
-          {
-            "fieldId": "calc@final-interest-rate",
-            "value": {
-              "type": "number",
-              "value": "5.75"
-            }
-          },
-          {
-            "fieldId": "calc@start-interest-rate",
-            "value": {
-              "type": "number",
-              "value": "5.75"
-            }
-          },
-          {
-            "fieldId": "calc@initial-mtg-payment",
-            "value": {
-              "type": "number",
-              "value": "2635.42"
-            }
-          },
-          {
-            "fieldId": "calc@final-est-front-dti",
-            "value": {
-              "type": "number",
-              "value": "0.264"
-            }
-          },
-          {
-            "fieldId": "calc@dti-enum-to-int-conversion",
-            "value": None
-          },
-          {
-            "fieldId": "calc@est-dti",
-            "value": {
-              "type": "number",
-              "value": "0.264"
-            }
-          },
-          {
-            "fieldId": "calc@initial-pi-payment",
-            "value": {
-              "type": "number",
-              "value": "3209.66"
-            }
-          },
-          {
-            "fieldId": "calc@adjusted-interest-rate",
-            "value": {
-              "type": "number",
-              "value": "5.75"
-            }
-          },
-          {
-            "fieldId": "calc@1st-lien-est-payment",
-            "value": {
-              "type": "number",
-              "value": "2635.42"
-            }
-          },
-          {
-            "fieldId": "calc@pi-payment",
-            "value": {
-              "type": "number",
-              "value": "3209.66"
-            }
-          },
-          {
-            "fieldId": "calc@final-est-dti",
-            "value": {
-              "type": "number",
-              "value": "0.264"
-            }
-          },
-          {
-            "fieldId": "calc@io-payment",
-            "value": {
-              "type": "number",
-              "value": "2635.42"
-            }
-          },
-          {
-            "fieldId": "calc-field@sgcp-investor-connect-purchase-matrix-output",
-            "value": None
-          },
-          {
-            "fieldId": "calc@eresi-dscr-final-max-ltv",
-            "value": {
-              "type": "number",
-              "value": "75"
-            }
-          },
-          {
-            "fieldId": "calc@eresi-dscr-ltv-calc-2",
-            "value": {
-              "type": "number",
-              "value": "999"
-            }
-          },
-          {
-            "fieldId": "calc@start-price",
-            "value": {
-              "type": "number",
-              "value": "91.292765"
-            }
-          },
-          {
-            "fieldId": "calc@eresi-dscr-total-leverage-reduction",
-            "value": {
-              "type": "number",
-              "value": "0"
-            }
-          },
-          {
-            "fieldId": "calc@monthly-mi",
-            "value": {
-              "type": "number",
-              "value": "0"
-            }
-          },
-          {
-            "fieldId": "calc@dscr",
-            "value": {
-              "type": "number",
-              "value": "0"
-            }
-          },
-          {
-            "fieldId": "calc@arm-fully-indexed-rate",
-            "value": {
-              "type": "number",
-              "value": "0"
-            }
-          },
-          {
-            "fieldId": "calc@est-payment",
-            "value": {
-              "type": "number",
-              "value": "2635.42"
-            }
-          },
-          {
-            "fieldId": "calc-field@sgcp-investor-connect-refinance-matrix-output",
-            "value": None
-          },
-          {
-            "fieldId": "calc@final-est-payment",
-            "value": {
-              "type": "number",
-              "value": "2635.42"
-            }
-          },
-          {
-            "fieldId": "calc@est-front-dti",
-            "value": {
-              "type": "number",
-              "value": "0.264"
-            }
-          },
-          {
-            "fieldId": "calc@mtg-payment",
-            "value": {
-              "type": "number",
-              "value": "2635.42"
-            }
-          },
-          {
-            "fieldId": "calc@final-dscr",
-            "value": {
-              "type": "number",
-              "value": "0"
-            }
-          },
-          {
-            "fieldId": "calc@adjusted-rate-lock-period",
-            "value": {
-              "type": "duration",
-              "count": "30",
-              "unit": "days"
-            }
-          },
-          {
-            "fieldId": "calc@eresi-dscr-ltv-calc-1",
-            "value": {
-              "type": "number",
-              "value": "75"
-            }
-          },
-          {
-            "fieldId": "calc@intermediate-rate",
-            "value": {
-              "type": "number",
-              "value": "5.75"
-            }
-          }
-        ],
-        "status": {
-          "type": "rejected",
-          "rejections": [
-            {
-              "source": {
-                "type": "rule",
-                "ruleId": "39371"
-              },
-              "message": "Product is not eligible for the desired loan term."
-            },
-            {
-              "source": {
-                "type": "rule",
-                "ruleId": "124523"
-              },
-              "message": "Rate falls below floor allowed."
-            },
-            {
-              "source": {
-                "type": "rule",
-                "ruleId": "124525"
-              },
-              "message": "Investment occupancy only. (Your Occupancy: Primary Residence) DSCR documentation type required. (Your Documentation Type: Bank Statements)"
-            }
-          ],
-          "reviewRequirements": [],
-          "errors": [
-            {
-              "source": {
-                "type": "rule",
-                "ruleId": "146234"
-              },
-              "kind": {
-                "type": "blank-field",
-                "fieldId": "field@decision-credit-score"
-              }
-            }
-          ],
-          "priceAdjustments": [],
-          "marginAdjustments": [],
-          "rateAdjustments": [],
-          "finalPriceAdjustments": [],
-          "finalMarginAdjustments": [],
-          "finalRateAdjustments": [],
-          "stipulations": []
-        }
-      }
-    ]
-  }
-}
-
+            conn.rollback() # Rollback any open transaction if error occurred outside per-product loop
+            print("Database transaction rolled back due to outer error.")
+    except Exception as e:
+        print(f"\nAn unexpected error occurred (outer loop): {e}")
+        if conn:
+            conn.rollback() # Rollback on unexpected error during database operations
+            print("Database transaction rolled back due to unexpected outer error.")
+    finally:
+        if conn:
+            conn.close()
+            print("Database connection closed.")
 
 def main():
     """
@@ -2207,7 +906,7 @@ def main():
     if not my_connection_string:
         raise ValueError("SQL_CONNECTION_STRING environment variable not set. Please set it before running the script.")
 
-    #process_loanpass_json(sample_json_data, my_connection_string)
+    # Call the new orchestrating function to fetch data from LoanPASS API and process it
     process_loan_pass_data(my_connection_string)
 
 if __name__ == "__main__":
