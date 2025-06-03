@@ -154,26 +154,7 @@ def process_loan_pass_data(db_connection_string, initial_summary_request_data=No
                 # but per-product transactions are safer if one product fails)
                 conn.autocommit = False # Ensure transaction is active
 
-                # 1. Insert/Update into LoanPASS_Product_Offerings
-                product_offering_id = insert_product_offering(cursor, data_for_db_insertion)
-
-                # 2. Insert into LoanPASS_Product_Calculated_Fields
-                if "calculatedFields" in data_for_db_insertion:
-                    insert_product_calculated_fields(cursor, product_offering_id, data_for_db_insertion["calculatedFields"])
-
-                # 3. Process Price Scenarios and their nested data
-                if "priceScenarios" in data_for_db_insertion:
-                    for scenario in data_for_db_insertion["priceScenarios"]:
-                        price_scenario_id = insert_price_scenario(cursor, product_offering_id, scenario)
-
-                        # Insert into LoanPASS_Price_Scenario_Calculated_Fields
-                        if "calculatedFields" in scenario:
-                            insert_price_scenario_calculated_fields(cursor, price_scenario_id, scenario["calculatedFields"])
-
-                        # Insert into LoanPASS_Price_Scenario_Errors
-                        if "errors" in scenario:
-                            insert_price_scenario_errors(cursor, price_scenario_id, scenario["errors"])
-
+                process_loanpass_json(data_for_db_insertion, db_connection_string)
                 # Commit the transaction for this product if all operations are successful
                 conn.commit()
                 print(f"Successfully inserted/updated data for Product ID: {product_id_to_fetch}")
@@ -887,10 +868,10 @@ def process_loanpass_json(json_data, conn_str):
             conn.rollback()
             print("Transaction rolled back due to an unexpected error.")
         print(f"An unexpected error occurred: {e}")
-    finally:
-        if conn:
-            conn.close()
-            print("Database connection closed.")
+    # finally:
+    #     if conn:
+    #         conn.close()
+    #         print("Database connection closed.")
 
 # --- Sample JSON Data (Provided by user) ---
 sample_json_data = {
