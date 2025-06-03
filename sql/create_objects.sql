@@ -517,6 +517,44 @@ ADD Run_Id VARCHAR(50);
 ALTER TABLE dbo.LoanPASS_Price_Scenario_Stipulations
 ADD Run_Id VARCHAR(50);
 
+-- Alter Run_Id to VARCHAR(64) in dbo.LoanPASS_Product_Offerings
+ALTER TABLE dbo.LoanPASS_Product_Offerings
+ALTER COLUMN Run_Id VARCHAR(64);
+
+-- Alter Run_Id to VARCHAR(64) in dbo.LoanPASS_Product_Calculated_Fields
+ALTER TABLE dbo.LoanPASS_Product_Calculated_Fields
+ALTER COLUMN Run_Id VARCHAR(64);
+
+-- Alter Run_Id to VARCHAR(64) in dbo.LoanPASS_Price_Scenarios
+ALTER TABLE dbo.LoanPASS_Price_Scenarios
+ALTER COLUMN Run_Id VARCHAR(64);
+
+-- Alter Run_Id to VARCHAR(64) in dbo.LoanPASS_Price_Scenario_Calculated_Fields
+ALTER TABLE dbo.LoanPASS_Price_Scenario_Calculated_Fields
+ALTER COLUMN Run_Id VARCHAR(64);
+
+-- Alter Run_Id to VARCHAR(64) in dbo.LoanPASS_Price_Scenario_Errors
+ALTER TABLE dbo.LoanPASS_Price_Scenario_Errors
+ALTER COLUMN Run_Id VARCHAR(64);
+
+-- Alter Run_Id to VARCHAR(64) in dbo.LoanPASS_Price_Scenario_Rejections
+ALTER TABLE dbo.LoanPASS_Price_Scenario_Rejections
+ALTER COLUMN Run_Id VARCHAR(64);
+
+-- Alter Run_Id to VARCHAR(64) in dbo.LoanPASS_Price_Scenario_Review_Requirements
+ALTER TABLE dbo.LoanPASS_Price_Scenario_Review_Requirements
+ALTER COLUMN Run_Id VARCHAR(64);
+
+-- Alter Run_Id to VARCHAR(64) in dbo.LoanPASS_Price_Scenario_Adjustments
+ALTER TABLE dbo.LoanPASS_Price_Scenario_Adjustments
+ALTER COLUMN Run_Id VARCHAR(64);
+
+-- Alter Run_Id to VARCHAR(64) in dbo.LoanPASS_Price_Scenario_Stipulations
+ALTER TABLE dbo.LoanPASS_Price_Scenario_Stipulations
+ALTER COLUMN Run_Id VARCHAR(64);
+
+drop index IX_UQ_Scenario_Business_Id_Filtered on dbo.LoanPASS_Price_Scenarios
+
 PRINT 'Schema script finished.';
 
 -- If the table might already exist and you want to redefine it,
@@ -569,4 +607,15 @@ TRUNCATE TABLE DBO.LoanPASS_Product_Calculated_Fields
 DELETE FROM DBO.LoanPASS_Price_Scenarios
 DELETE FROM DBO.LoanPASS_Product_Offerings
 
-drop index IX_UQ_Scenario_Business_Id_Filtered on dbo.LoanPASS_Price_Scenarios
+
+DECLARE @sql NVARCHAR(MAX) = N'';
+SELECT @sql += 
+    'SELECT ''' + s.name + '.' + t.name + ''' AS TableName, COUNT(*) AS RecordCount FROM [' + s.name + '].[' + t.name + '] UNION ALL '
+FROM sys.tables t
+JOIN sys.schemas s ON t.schema_id = s.schema_id
+WHERE s.name = 'dbo' AND t.name LIKE 'LoanPass%';
+
+-- Remove the last 'UNION ALL'
+SET @sql = LEFT(@sql, LEN(@sql) - 10);
+-- Execute the dynamic SQL
+EXEC sp_executesql @sql;

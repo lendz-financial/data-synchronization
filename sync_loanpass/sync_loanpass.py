@@ -351,7 +351,8 @@ def insert_price_scenario_calculated_fields(cursor, price_scenario_id, calculate
         Enum_Type_Id__c, Variant_Id__c, Number_Value__c,
         String_Value__c, Duration_Count__c, Duration_Unit__c, Run_Id
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """
+    """.format(table_name)
+
     current_time = datetime.now(timezone.utc)
     for field in calculated_fields_data:
         field_id = field.get('fieldId')
@@ -724,21 +725,23 @@ def call_loanpass_api(endpoint, json_data_for_api):
 def process_loanpass_json(cursor, json_data, run_id):
     """
     Processes the entire LoanPASS JSON structure and inserts data into the database.
-    Accepts the database cursor and run_id as arguments.
+    This function is designed to insert only top-level product offerings and price scenarios.
+    All other nested insertions (calculated fields, errors, rejections, review requirements, adjustments, stipulations)
+    are intentionally suppressed for this version of the script.
     """
     try:
         # 1. Insert LoanPASS_Product_Offerings (top-level JSON is the product offering)
         product_offering_id = insert_product_offering(cursor, json_data, run_id)
 
-        # 2. Insert LoanPASS_Product_Calculated_Fields (from productFields array)
-        if 'productFields' in json_data and json_data['productFields']:
-            insert_product_calculated_fields(cursor, product_offering_id, json_data['productFields'], run_id, is_calculated=False)
+        # 2. Suppress Insert into LoanPASS_Product_Calculated_Fields (from productFields array)
+        # if 'productFields' in json_data and json_data['productFields']:
+        #     insert_product_calculated_fields(cursor, product_offering_id, json_data['productFields'], run_id, is_calculated=False)
 
-        # 3. Insert LoanPASS_Product_Calculated_Fields (from calculatedFields array)
-        if 'calculatedFields' in json_data and json_data['calculatedFields']:
-            insert_product_calculated_fields(cursor, product_offering_id, json_data['calculatedFields'], run_id, is_calculated=True)
+        # 3. Suppress Insert into LoanPASS_Product_Calculated_Fields (from calculatedFields array)
+        # if 'calculatedFields' in json_data and json_data['calculatedFields']:
+        #     insert_product_calculated_fields(cursor, product_offering_id, json_data['calculatedFields'], run_id, is_calculated=True)
 
-        # 4. Insert LoanPASS_Price_Scenarios and their nested data
+        # 4. Insert LoanPASS_Price_Scenarios and suppress their nested data
         price_scenarios_data = json_data.get('status', {}).get('priceScenarios', [])
         if price_scenarios_data:
             for scenario in price_scenarios_data:
@@ -747,34 +750,34 @@ def process_loanpass_json(cursor, json_data, run_id):
 
                 # Only proceed with child insertions if an integer ID was successfully obtained
                 if isinstance(price_scenario_id, int):
-                    # Insert nested data for each price scenario
-                    if 'calculatedFields' in scenario and scenario['calculatedFields']:
-                        insert_price_scenario_calculated_fields(cursor, price_scenario_id, scenario['calculatedFields'], run_id)
+                    # Suppress Insert nested data for each price scenario
+                    # if 'calculatedFields' in scenario and scenario['calculatedFields']:
+                    #     insert_price_scenario_calculated_fields(cursor, price_scenario_id, scenario['calculatedFields'], run_id)
                     
                     scenario_status = scenario.get('status', {})
-                    if 'errors' in scenario_status and scenario_status['errors']:
-                        insert_price_scenario_errors(cursor, price_scenario_id, scenario_status['errors'], run_id)
-                    if 'rejections' in scenario_status and scenario_status['rejections']:
-                        insert_price_scenario_rejections(cursor, price_scenario_id, scenario_status['rejections'], run_id)
-                    if 'reviewRequirements' in scenario_status and scenario_status['reviewRequirements']:
-                        insert_price_scenario_review_requirements(cursor, price_scenario_id, scenario_status['reviewRequirements'], run_id)
+                    # if 'errors' in scenario_status and scenario_status['errors']:
+                    #     insert_price_scenario_errors(cursor, price_scenario_id, scenario_status['errors'], run_id)
+                    # if 'rejections' in scenario_status and scenario_status['rejections']:
+                    #     insert_price_scenario_rejections(cursor, price_scenario_id, scenario_status['rejections'], run_id)
+                    # if 'reviewRequirements' in scenario_status and scenario_status['reviewRequirements']:
+                    #     insert_price_scenario_review_requirements(cursor, price_scenario_id, scenario_status['reviewRequirements'], run_id)
                     
-                    # Handle various adjustment types
-                    if 'priceAdjustments' in scenario_status and scenario_status['priceAdjustments']:
-                        insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['priceAdjustments'], 'PriceAdjustment', run_id)
-                    if 'marginAdjustments' in scenario_status and scenario_status['marginAdjustments']:
-                        insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['marginAdjustments'], 'MarginAdjustment', run_id)
-                    if 'rateAdjustments' in scenario_status and scenario_status['rateAdjustments']:
-                        insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['rateAdjustments'], 'RateAdjustment', run_id)
-                    if 'finalPriceAdjustments' in scenario_status and scenario_status['finalPriceAdjustments']:
-                        insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['finalPriceAdjustments'], 'FinalPriceAdjustment', run_id)
-                    if 'finalMarginAdjustments' in scenario_status and scenario_status['finalMarginAdjustments']:
-                        insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['finalMarginAdjustments'], 'FinalMarginAdjustment', run_id)
-                    if 'finalRateAdjustments' in scenario_status and scenario_status['finalRateAdjustments']:
-                        insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['finalRateAdjustments'], 'FinalRateAdjustment', run_id)
+                    # Suppress Handle various adjustment types
+                    # if 'priceAdjustments' in scenario_status and scenario_status['priceAdjustments']:
+                    #     insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['priceAdjustments'], 'PriceAdjustment', run_id)
+                    # if 'marginAdjustments' in scenario_status and scenario_status['marginAdjustments']:
+                    #     insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['marginAdjustments'], 'MarginAdjustment', run_id)
+                    # if 'rateAdjustments' in scenario_status and scenario_status['rateAdjustments']:
+                    #     insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['rateAdjustments'], 'RateAdjustment', run_id)
+                    # if 'finalPriceAdjustments' in scenario_status and scenario_status['finalPriceAdjustments']:
+                    #     insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['finalPriceAdjustments'], 'FinalPriceAdjustment', run_id)
+                    # if 'finalMarginAdjustments' in scenario_status and scenario_status['finalMarginAdjustments']:
+                    #     insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['finalMarginAdjustments'], 'FinalMarginAdjustment', run_id)
+                    # if 'finalRateAdjustments' in scenario_status and scenario_status['finalRateAdjustments']:
+                    #     insert_price_scenario_adjustments(cursor, price_scenario_id, scenario_status['finalRateAdjustments'], 'FinalRateAdjustment', run_id)
                     
-                    if 'stipulations' in scenario_status and scenario_status['stipulations']:
-                        insert_price_scenario_stipulations(cursor, price_scenario_id, scenario_status['stipulations'], run_id)
+                    # if 'stipulations' in scenario_status and scenario_status['stipulations']:
+                    #     insert_price_scenario_stipulations(cursor, price_scenario_id, scenario_status['stipulations'], run_id)
                 else:
                     # This block will be hit if a random integer was generated due to a failed parent insert.
                     print(f"  Skipping nested insertions for scenario '{scenario.get('id')}' because no valid integer ID was retrieved from the database.")
@@ -797,9 +800,13 @@ def process_loan_pass_data(db_connection_string, initial_summary_request_data=No
     Handles transactions for atomicity.
     """
     conn = None
-    # Generate a unique Run_Id for this execution
-    current_run_id = uuid.uuid4()
+    # Generate a unique Run_Id for this execution using a human-readable timestamp and UUID.
+    # Format: YYYY-MM-DD_HH-MM-SS_UUID
+    current_run_id = f"{datetime.now(timezone.utc).strftime('%Y-%m-%d_%H-%M-%S')}_{uuid.uuid4()}"
     print(f"Starting data processing with Run ID: {current_run_id}")
+
+    start_time = datetime.now()
+    print(f"Run started at: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
     try:
         # --- 1. Prepare and Call /execute-summary API ---
@@ -892,6 +899,11 @@ def process_loan_pass_data(db_connection_string, initial_summary_request_data=No
             conn.rollback() # Rollback on unexpected error during database operations
             print("Database transaction rolled back due to unexpected outer error.")
     finally:
+        end_time = datetime.now()
+        duration = end_time - start_time
+        print(f"\n--- Run Summary ---")
+        print(f"Run ended at: {end_time.strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"Total duration: {duration}")
         if conn:
             conn.close()
             print("Database connection closed.")
