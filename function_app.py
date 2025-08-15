@@ -16,7 +16,8 @@ api_endpoint = 'https://dialpad.com/api/v2/call'
 api_token = 'JzEWbTUAQ7Msvd2Qha58hk2dmthVdFVmrgmTGVXg2RbyTBU4BAzsBDk6x8EKc6YxC7XrLxMbvjNY37pWhtDC8mLRkuUFyaU7YjGD'
 MAX_REQUESTS_PER_MINUTE = 1000  # Setting a slightly lower limit for safety
 MIN_DELAY_SECONDS = 60.0 / MAX_REQUESTS_PER_MINUTE
-connection_string = 'Driver={ODBC Driver 18 for SQL Server};Server=tcp:lendz.database.windows.net,1433;Database=Lexi;Uid=lexi;Pwd=H3n4y*_D@;Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;'
+#connection_string = 'Driver={ODBC Driver 18 for SQL Server};Server=tcp:lendz.database.windows.net,1433;Database=Lexi;Uid=lexi;Pwd=H3n4y*_D@;Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;'
+connection_string = 'Driver={ODBC Driver 17 for SQL Server};Server=tcp:lendz.database.windows.net,1433;Database=Lexi;Uid=lexi;Pwd=H3n4y*_D@;Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;'
 
 app = func.FunctionApp()
 
@@ -296,13 +297,127 @@ def dialpad_api_request(api_start_time=None, api_end_time=None):
     logging.info('Pagination process completed.')
 
 
+def get_and_update_transcripts(call_ids, connection_string, api_token):
+    """
+    Downloads transcripts for a list of call_ids and updates the Azure SQL database.
 
+    Args:
+        call_ids (list): A list of call_ids to fetch transcripts for.
+        connection_string (str): The connection string for the Azure SQL database.
+        api_token (str): The Dialpad API token for authentication.
+    """
+    transcript_api_endpoint = 'https://dialpad.com/api/v2/transcripts/'
+    headers = {'Authorization': f'Bearer {api_token}'}
+
+    try:
+        conn = pyodbc.connect(connection_string)
+        cursor = conn.cursor()
+        
+        update_count = 0
+        for call_id in call_ids:
+            try:
+                transcript_url = f"{transcript_api_endpoint}{call_id}"
+                response = requests.get(transcript_url, headers=headers)
+                response.raise_for_status()
+
+                transcript_data = response.json()
+                if 'lines' in transcript_data:
+                    # Filter for 'transcript' type lines and join their content
+                    transcript_lines = [line['content'] for line in transcript_data['lines'] if line.get('type') == 'transcript']
+                    full_transcript = "\n".join(transcript_lines)
+                    
+                    # Update the database
+                    update_statement = """
+                    UPDATE DialpadCalls
+                    SET transcript = ?
+                    WHERE call_id = ?
+                    """
+                    cursor.execute(update_statement, full_transcript, call_id)
+                    update_count += 1
+                else:
+                    logging.warning(f"No 'lines' found in transcript data for call_id: {call_id}")
+
+            except requests.exceptions.RequestException as e:
+                logging.error(f'Failed to get transcript for call_id {call_id}: {e}')
+                continue
+            except json.JSONDecodeError:
+                logging.error(f'Failed to decode JSON response for transcript for call_id {call_id}.')
+                continue
+            
+            # Add a small delay to avoid hitting rate limits on the transcripts API
+            time.sleep(MIN_DELAY_SECONDS)
+        
+        conn.commit()
+        logging.info(f"Successfully updated {update_count} call transcripts.")
+        
+    except pyodbc.Error as e:
+        logging.error(f"Database error while updating transcripts: {e}")
+        conn.rollback()
+    finally:
+        if 'cursor' in locals() and cursor:
+            cursor.close()
+        if 'conn' in locals() and conn:
+            conn.close()
+            
+def get_justin_smith_transcripts_in_batches():
+    """
+    Retrieves call IDs for 'Justin Smith' from the DialpadCalls table, and then
+    calls get_and_update_transcripts for batches of these call IDs.
+    """
+    batch_size = 50
+    
+    try:
+        logging.info("Connecting to the database to retrieve Justin Smith's call IDs.")
+        conn = pyodbc.connect(connection_string)
+        cursor = conn.cursor()
+
+        # SQL query to get call IDs for 'Justin Smith' where a transcript is needed.
+        query = """
+        SELECT call_id
+        FROM DialpadCalls
+        WHERE
+        (transcript IS NULL OR trim(transcript) = '')
+        AND YEAR(date_started) = YEAR(GETDATE())
+        AND MONTH(date_started) = 5
+        -- WHERE (target_name LIKE '%Salvador Rang%' OR contact_name LIKE '%Salvador Rang%')
+          --AND was_recorded = 1
+          --AND (transcript IS NULL OR transcript = '')
+        """
+        cursor.execute(query)
+        call_ids_to_process = [row.call_id for row in cursor.fetchall()]
+        
+        if not call_ids_to_process:
+            logging.info("No new calls found for Justin Smith needing a transcript.")
+            return
+
+        logging.info(f"Found {len(call_ids_to_process)} calls for Justin Smith to process.")
+
+        # Process call IDs in batches
+        for i in range(0, len(call_ids_to_process), batch_size):
+            batch = call_ids_to_process[i:i + batch_size]
+            logging.info(f"Processing batch {i // batch_size + 1} of size {len(batch)}.")
+            get_and_update_transcripts(batch, connection_string, api_token)
+            
+    except pyodbc.Error as e:
+        logging.error(f"Database error in get_justin_smith_transcripts_in_batches: {e}")
+    except Exception as e:
+        logging.error(f"An unexpected error occurred: {e}")
+    finally:
+        if 'cursor' in locals() and cursor:
+            cursor.close()
+        if 'conn' in locals() and conn:
+            conn.close()
+        logging.info("Finished processing Justin Smith's call transcripts.")
+        
+                    
 if __name__ == "__main__":
     # Define Eastern Time Zone
-    eastern = pytz.timezone('America/New_York')
-    dt = eastern.localize(datetime.datetime(2025, 5, 5, 0, 0))
-    epoch_time = int(dt.timestamp())
-    print(epoch_time)
-    api_end_time = int((eastern.localize(datetime.datetime(2025, 5, 9, 0, 0))).timestamp())
-    print(api_end_time)
-    dialpad_api_request(api_start_time=epoch_time, api_end_time=api_end_time)
+    # eastern = pytz.timezone('America/New_York')
+    # dt = eastern.localize(datetime.datetime(2025, 5, 5, 0, 0))
+    # epoch_time = int(dt.timestamp())
+    # print(epoch_time)
+    # api_end_time = int((eastern.localize(datetime.datetime(2025, 5, 9, 0, 0))).timestamp())
+    # print(api_end_time)
+    # dialpad_api_request(api_start_time=epoch_time, api_end_time=api_end_time)
+    
+    get_justin_smith_transcripts_in_batches()

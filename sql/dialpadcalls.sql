@@ -29,3 +29,6 @@ CREATE TABLE [dbo].[DialpadCalls] (
     was_recorded BIT
 );
 CREATE INDEX IX_DialpadCalls_ContactEmail ON dbo.DialpadCalls (contact_email);
+
+ALTER TABLE [dbo].[DialpadCalls]
+ADD transcript NVARCHAR(MAX);
