@@ -359,26 +359,23 @@ def get_and_update_transcripts(call_ids, connection_string, api_token):
         if 'conn' in locals() and conn:
             conn.close()
             
-def get_justin_smith_transcripts_in_batches():
-    """
-    Retrieves call IDs for 'Justin Smith' from the DialpadCalls table, and then
-    calls get_and_update_transcripts for batches of these call IDs.
-    """
+def get_remaining_transcripts_in_batches():
+
     batch_size = 50
     
     try:
-        logging.info("Connecting to the database to retrieve Justin Smith's call IDs.")
+        logging.info("Connecting to the database to retrieve remaining call IDs.")
         conn = pyodbc.connect(connection_string)
         cursor = conn.cursor()
 
-        # SQL query to get call IDs for 'Justin Smith' where a transcript is needed.
+
         query = """
         SELECT call_id
         FROM DialpadCalls
         WHERE
         (transcript IS NULL OR trim(transcript) = '')
         AND YEAR(date_started) = YEAR(GETDATE())
-        AND MONTH(date_started) = 5
+        AND MONTH(date_started) = 8
         -- WHERE (target_name LIKE '%Salvador Rang%' OR contact_name LIKE '%Salvador Rang%')
           --AND was_recorded = 1
           --AND (transcript IS NULL OR transcript = '')
@@ -390,7 +387,7 @@ def get_justin_smith_transcripts_in_batches():
             logging.info("No new calls found for Justin Smith needing a transcript.")
             return
 
-        logging.info(f"Found {len(call_ids_to_process)} calls for Justin Smith to process.")
+        logging.info(f"Found {len(call_ids_to_process)} remaining calls to process.")
 
         # Process call IDs in batches
         for i in range(0, len(call_ids_to_process), batch_size):
@@ -399,7 +396,7 @@ def get_justin_smith_transcripts_in_batches():
             get_and_update_transcripts(batch, connection_string, api_token)
             
     except pyodbc.Error as e:
-        logging.error(f"Database error in get_justin_smith_transcripts_in_batches: {e}")
+        logging.error(f"Database error in get_remaining_transcripts_in_batches: {e}")
     except Exception as e:
         logging.error(f"An unexpected error occurred: {e}")
     finally:
@@ -407,7 +404,7 @@ def get_justin_smith_transcripts_in_batches():
             cursor.close()
         if 'conn' in locals() and conn:
             conn.close()
-        logging.info("Finished processing Justin Smith's call transcripts.")
+        logging.info("Finished processing  call transcripts.")
         
                     
 if __name__ == "__main__":
@@ -420,4 +417,4 @@ if __name__ == "__main__":
     # print(api_end_time)
     # dialpad_api_request(api_start_time=epoch_time, api_end_time=api_end_time)
     
-    get_justin_smith_transcripts_in_batches()
+    get_remaining_transcripts_in_batches()
