@@ -381,7 +381,7 @@ def get_remaining_transcripts_in_batches():
         call_id
         FROM DialpadCalls
         WHERE
-        date_started >= DATEADD(minute, -20, GETDATE())
+        date_started >= DATEADD(minute, -60, GETDATE())
         AND
         (transcript IS NULL OR trim(transcript) = '')        
         """
