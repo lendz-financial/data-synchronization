@@ -16,8 +16,8 @@ api_endpoint = 'https://dialpad.com/api/v2/call'
 api_token = 'JzEWbTUAQ7Msvd2Qha58hk2dmthVdFVmrgmTGVXg2RbyTBU4BAzsBDk6x8EKc6YxC7XrLxMbvjNY37pWhtDC8mLRkuUFyaU7YjGD'
 MAX_REQUESTS_PER_MINUTE = 1000  # Setting a slightly lower limit for safety
 MIN_DELAY_SECONDS = 60.0 / MAX_REQUESTS_PER_MINUTE
-#connection_string = 'Driver={ODBC Driver 18 for SQL Server};Server=tcp:lendz.database.windows.net,1433;Database=Lexi;Uid=lexi;Pwd=H3n4y*_D@;Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;'
-connection_string = 'Driver={ODBC Driver 17 for SQL Server};Server=tcp:lendz.database.windows.net,1433;Database=Lexi;Uid=lexi;Pwd=H3n4y*_D@;Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;'
+connection_string = 'Driver={ODBC Driver 18 for SQL Server};Server=tcp:lendz.database.windows.net,1433;Database=Lexi;Uid=lexi;Pwd=H3n4y*_D@;Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;'
+#connection_string = 'Driver={ODBC Driver 17 for SQL Server};Server=tcp:lendz.database.windows.net,1433;Database=Lexi;Uid=lexi;Pwd=H3n4y*_D@;Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;'
 
 app = func.FunctionApp()
 
@@ -36,6 +36,16 @@ def get_dialpad_calls(myTimer: func.TimerRequest) -> None:
 
     logging.info('Python timer trigger function ran at %s', time.time())
     dialpad_api_request()
+    
+    
+@app.timer_trigger(schedule="0 5 * * * *", arg_name="myTranscriptTimer", run_on_startup=True,
+              use_monitor=False) 
+def get_dialpad_call_transcripts(myTranscriptTimer: func.TimerRequest) -> None:
+    if myTranscriptTimer.past_due:
+        logging.info('The transcripts timer is past due!')
+
+    logging.info('Python timer transcripts trigger function ran at %s', time.time())
+    get_remaining_transcripts_in_batches() 
 
 def convert_milliseconds_to_datetime(milliseconds):
     """
@@ -360,31 +370,26 @@ def get_and_update_transcripts(call_ids, connection_string, api_token):
             conn.close()
             
 def get_remaining_transcripts_in_batches():
-
-    batch_size = 50
-    
+    batch_size = 100   
     try:
         logging.info("Connecting to the database to retrieve remaining call IDs.")
         conn = pyodbc.connect(connection_string)
         cursor = conn.cursor()
 
-
         query = """
-        SELECT call_id
+        SELECT
+        call_id
         FROM DialpadCalls
         WHERE
-        (transcript IS NULL OR trim(transcript) = '')
-        AND YEAR(date_started) = YEAR(GETDATE())
-        AND MONTH(date_started) = 8
-        -- WHERE (target_name LIKE '%Salvador Rang%' OR contact_name LIKE '%Salvador Rang%')
-          --AND was_recorded = 1
-          --AND (transcript IS NULL OR transcript = '')
+        date_started >= DATEADD(minute, -20, GETDATE())
+        AND
+        (transcript IS NULL OR trim(transcript) = '')        
         """
         cursor.execute(query)
         call_ids_to_process = [row.call_id for row in cursor.fetchall()]
         
         if not call_ids_to_process:
-            logging.info("No new calls found for Justin Smith needing a transcript.")
+            logging.info("No new calls found  needing a transcript.")
             return
 
         logging.info(f"Found {len(call_ids_to_process)} remaining calls to process.")
@@ -407,7 +412,7 @@ def get_remaining_transcripts_in_batches():
         logging.info("Finished processing  call transcripts.")
         
                     
-if __name__ == "__main__":
+#if __name__ == "__main__":
     # Define Eastern Time Zone
     # eastern = pytz.timezone('America/New_York')
     # dt = eastern.localize(datetime.datetime(2025, 5, 5, 0, 0))
@@ -417,4 +422,4 @@ if __name__ == "__main__":
     # print(api_end_time)
     # dialpad_api_request(api_start_time=epoch_time, api_end_time=api_end_time)
     
-    get_remaining_transcripts_in_batches()
+    #get_remaining_transcripts_in_batches()
